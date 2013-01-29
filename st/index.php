@@ -1,47 +1,4 @@
 <?php
-/* TODO
- * Implement sorting - DONE in frontend
- * Allow from undetermined total episodes - DONE in frontend
- * Link back to blog for shows - DONE
- * Implement +/- for updating episode count easily
- * Use cookies instead of POST to store session - maybe? this was for the old showtimes.
- * Add checkboxes to each staff member during edit, indicating completion. Depending on a show,
- *   staff is red until they finish their job. Green until everyone finishes. Automatically 
- *   increase the episode count after everyone finishes their job. Ep # also in red.
- * Realtime ETA, ETA 30 minutes after airtime. - DONE in frontend, not realtime
- * Local airtime should use JS to convert to visitor's time. - DONE in frontend
- * Make table easier to read (i.e. more opacity) - DONE in frontend
- * Create a page for this app specifically on Commie's WordPress, w/ only default header - DONE
- * API:
-   * get(series,episode,position) returns staff member - get(series,position) DONE
-   * get(series,episode) returns position it is stalled at - DONE
-   * set(series,episode,position,status) returns success? - set(series|id,position,status) DONE
-   * set(series, episode, position, staff member) returns success? - set(series|id,position,name) DONE
-   * set(series, episode) returns success? - DONE
- * 13:35:23 <&RHExcelion> updating airtime should have an option to use local time
-13:37:08 <&RHExcelion> or not local time
-13:37:12 <&RHExcelion> crunchyroll standard time
- */
-/*
-CREATE TABLE shows(
-  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  series VARCHAR(127) NOT NULL,
-  airtime DATETIME DEFAULT 0,
-  current_ep SMALLINT unsigned DEFAULT 0,
-  total_eps SMALLINT unsigned DEFAULT 0,
-  blog_link VARCHAR(255),
-  status TINYINT unsigned DEFAULT 0,
-  translator VARCHAR(63),
-  tl_status TINYINT unsigned DEFAULT 0,
-  editor VARCHAR(63),
-  ed_status TINYINT unsigned DEFAULT 0,
-  typesetter VARCHAR(63),
-  ts_status TINYINT unsigned DEFAULT 0,
-  timer VARCHAR(63),
-  tm_status TINYINT unsigned DEFAULT 0,
-  channel VARCHAR(63)
-);
- */
 require 'Slim/Slim.php';
 require 'NotORM.php';
 
