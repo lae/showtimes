@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Adding a show - Commie Subs</title>
+    <meta charset="utf-8" />
+    <script type='text/javascript' src='http://code.jquery.com/jquery-1.8.2.min.js'></script>
+    <script type="text/javascript">
+function padmin(m){if(m.length<2){return '0'+m;}else{return m;}}
+$(document).ready(function(){
+  d = new Date();
+  $('#year').val(d.getFullYear());
+  $('#month').val(d.getMonth()+1);
+  $('#day').val(d.getDate());
+  $('#hour').val('00');
+  $('#minute').val('00');
+  $('#newshow').submit(function(){
+    var requestObj = new Object();
+    requestObj.key = $('#key').val();
+    data = new Object();
+    data.series = $('#series').val();
+    data.airtime = $('#year').val() + '-' + $('#month').val() + '-' + $('#day').val() + ' ' + $('#hour').val() + ':' + padmin($('#minute').val());
+    data.current_ep = parseInt($('#current_ep').val(),10);
+    data.total_eps = parseInt($('#total_eps').val(),10);
+    if($('#status').is(':checked')) { data.status = -1; }
+    data.channel = $('#channel').val();
+    data.blog_link = $('#blog_link').val();
+    data.translator = $('#translator').val();
+    data.editor = $('#editor').val();
+    data.typesetter = $('#typesetter').val();
+    data.timer = $('#timer').val();
+    requestObj.data = data;
+    var form = $(this),
+    formUrl = form.attr('action'),
+    formData = JSON.stringify(requestObj),
+    formMethod = form.attr('method'),
+    responseMsg = $('#response');
+
+    responseMsg.text("Please wait...");
+    $('#request').text(formData).fadeIn();
+    $.ajax({
+      url: formUrl,
+      type: formMethod,
+      contentType: 'application/json',
+      data: formData,
+      success:function(data){
+        var t = data.status ? 'Success: ' : 'Error: ';
+        responseMsg.text(t + data.message);
+      }  
+    });
+    return false;  
+  });
+});
+    </script>
+    <style type="text/css">
+p { margin: 0; }
+fieldset p { margin: 0; display: inline; padding: 0; }
+label, input { display: inline-block; }
+label { width: 200px; }
+#year, #current_ep, #total_eps { width: 40px; }
+#month, #day, #hour, #minute { width: 30px; }
+#request { display: none; background: #efefef; margin-bottom: 5px; }
+    </style>
+  </head>
+  <body>
+
+<p id="response"></p>
+<code id="request"></code>
+<form id="newshow" method="post" action="/st/show/new">
+  <fieldset>
+    <legend>Required Information:</legend>
+    <label for="key">API Key</label>
+      <input type="text" id="key" name="key" /><br />
+    <label for="series">Series</label>
+      <input type="text" id="series" name="series" /><br />
+    <label>Airtime</label>
+      <input type="text" name="year" id="year" maxlength="4" /> - 
+      <input type="number" name="month" id="month" min="1" max="12" /> - 
+      <input type="number" name="day" id="day" min="1" max="31" /> &nbsp; 
+      <input type="number" name="hour" id="hour" min="0" max="23" /> :
+      <input type="number" name="minute" id="minute" min="0" max="59" />
+      <p>YYYY-m-d H:MM</p><br />
+      <p>Note: Airtime should be the next time the series will be airing.</p>
+  </fieldset>
+  <fieldset>
+    <legend>General Information</legend>
+    <label for="current_ep">Current Episode</label>
+      <input type="text" name="current_ep" id="current_ep" value="0" /><br />
+    <label for="total_eps">Total Episodes</label>
+      <input type="text" name="total_eps" id="total_eps" value="0" /><br />
+    <label for="status">Finished Airing?</label>
+      <input type="checkbox" id="status" name="status" /><br />
+    <label for="channel">Channel</label>
+      <input type="text" id="channel" name="channel" value="Crunchyroll" /><br />
+    <label for="blog_link">Link to Blog</label>
+      <input type="text" id="blog_link" name="blog_link" /><br />
+  </fieldset>
+  <fieldset>
+    <legend>Staff</legend>
+    <label for="translator">Translator</label>
+      <input type="text" id="translator" name="translator" /><br />
+    <label for="editor">Editor</label>
+      <input type="text" id="editor" name="editor" /><br />
+    <label for="timer">Timer</label>
+      <input type="text" id="timer" name="timer" /><br />
+    <label for="typesetter">Typesetter</label>
+      <input type="text" id="typesetter" name="typesetter" /><br />
+  </fieldset>
+  <input type="submit" id="addbutton" value="Add show" />
+  <input type="reset" value="Clear fields" />
+</form>
+
+  </body>
+</html>
