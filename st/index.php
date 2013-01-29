@@ -8,7 +8,7 @@ $pdo = new PDO('mysql:host=localhost;dbname=commie', 'commie', 'Hammer und Siche
 $db = new NotORM($pdo);
 
 \Slim\Slim::registerAutoloader();
-$app = new \Slim\Slim(array('mode' => 'development'));
+$app = new \Slim\Slim(array('mode' => 'production'));
 $app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
@@ -25,16 +25,6 @@ $app->configureMode('development', function () use ($app) {
         'cookies.lifetime' => '15 minutes'
     ));
 });
-/*\Slim\Route::setDefaultConditions(array(
-    'id' => '[0-9]+',
-    'current_ep' => '[0-9]+',
-    'total_eps' => '[0-9]+',
-    'blog_link' => 'http://.*',
-    'tl_status' => '(0|1)',
-    'ed_status' => '(0|1)',
-    'ts_status' => '(0|1)',
-    'tm_status' => '(0|1)',
-));*/
 
 // JSON-encoded error to be called from within the application
 function jerror($message) {
