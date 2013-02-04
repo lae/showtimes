@@ -159,9 +159,10 @@ $app->get('/incomplete_shows', function () use ($app, $db) {
     echo json_encode($shows);
 });
 
-$app->get('/show/:id/substatus', function ($id) use ($app, $db) {
+$app->get('/show/:id/substatus', function ($filter) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    $data = $db->shows()->where('id', $id);
+    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $id); }
+    else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
     if ($show = $data->fetch()) {
         $now = strtotime(date('Y-m-d H:i:s'));
         $air = strtotime($show['airtime']);
@@ -177,12 +178,13 @@ $app->get('/show/:id/substatus', function ($id) use ($app, $db) {
             'value' => $v,
             'updated' => strtotime($show['updated'])+32400
         )));
-    } else { jerror("Show ID $id does not exist."); }
+    } else { jerror($_err); }
 })->name('get_show_substatus');
 
-$app->get('/show/:id/:position', function ($id, $position) use ($app, $db) {
+$app->get('/show/:filter/:position', function ($filter, $position) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    $data = $db->shows()->where('id', $id);
+    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $id); }
+    else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
     if ($show = $data->fetch()) {
         $positions = array(
             'translator' => array($show['translator'], $show['tl_status']),
@@ -199,7 +201,7 @@ $app->get('/show/:id/:position', function ($id, $position) use ($app, $db) {
             )));
         }
         else { jerror("Position '$position' does not exist."); }
-    } else { jerror("Show ID $id does not exist."); }
+    } else { jerror($_err); }
 })->name('get_show_position');
 
 $app->post('/show/new', function () use ($app, $db) {
