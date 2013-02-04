@@ -8,7 +8,7 @@ $pdo = new PDO('mysql:host=localhost;dbname=commie', 'commie', 'Hammer und Siche
 $db = new NotORM($pdo);
 
 \Slim\Slim::registerAutoloader();
-$app = new \Slim\Slim(array('mode' => 'production'));
+$app = new \Slim\Slim(array('mode' => 'development'));
 $app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
@@ -35,6 +35,7 @@ function jerror($message) {
 
 function sendjson($status, $results) {
     global $app;
+    $app->response()->header('Content-Type', 'application/json');
     if($status===true) { $r = array('status' => true, 'results' => $results); }
     else { $r = array('status' => false, 'message' => $results); }
     echo json_encode($r);
@@ -81,7 +82,6 @@ function showa($s) {
 
 $app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
     $shows = array();
-    $app->response()->header('Content-Type', 'application/json');
     switch ($filter) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
