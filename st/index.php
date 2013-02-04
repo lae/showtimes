@@ -74,6 +74,18 @@ function showa($dirty) {
     return $clean;
 }
 
+$app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
+    $shows = array('results' => '');
+    $app->response()->header('Content-Type', 'application/json');
+    switch ($filter) {
+        case 'done': $data = $db->shows()->where('status', 1); break;
+        case 'notdone': $data = $db->shows()->where('status', 0); break;
+        case NULL: $data = $db->shows(); break;
+    }
+    foreach ($data as $show) { $shows['results'][] = showa($show); }
+    echo json_encode($shows);
+});
+
 // GET route
 $app->get('/show/:id', function ($id) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
