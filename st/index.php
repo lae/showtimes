@@ -33,6 +33,12 @@ function jerror($message) {
     $app->stop();
 };
 
+function sendjson($status, $results) {
+    global $app;
+    if($status===true) { $r = array('status' => true, 'results' => $results); }
+    else { $r = array('status' => false, 'message' => $results); }
+    echo json_encode($r);
+}
 // Update to next episode/increase date and clear counters.
 function next_episode($show) {
     $date = new DateTime($show['airtime']);
@@ -74,15 +80,15 @@ function showa($s) {
 }
 
 $app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
-    $shows = array('results' => '');
+    $shows = array();
     $app->response()->header('Content-Type', 'application/json');
     switch ($filter) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
         case NULL: $data = $db->shows(); break;
     }
-    foreach ($data as $show) { $shows['results'][] = showa($show); }
-    echo json_encode($shows);
+    foreach ($data as $show) { $shows[] = showa($show); }
+    sendjson(true, $shows);
 });
 
 // GET route
