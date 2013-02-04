@@ -159,9 +159,9 @@ $app->get('/incomplete_shows', function () use ($app, $db) {
     echo json_encode($shows);
 });
 
-$app->get('/show/:series/substatus', function ($series) use ($app, $db) {
+$app->get('/show/:id/substatus', function ($id) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    $data = $db->shows()->where('series', $series);
+    $data = $db->shows()->where('id', $id);
     if ($show = $data->fetch()) {
         $now = strtotime(date('Y-m-d H:i:s'));
         $air = strtotime($show['airtime']);
@@ -177,12 +177,12 @@ $app->get('/show/:series/substatus', function ($series) use ($app, $db) {
             'value' => $v,
             'updated' => strtotime($show['updated'])+32400
         )));
-    } else { jerror("Show '$series' does not exist."); }
+    } else { jerror("Show ID $id does not exist."); }
 })->name('get_show_substatus');
 
-$app->get('/show/:series/:position', function ($series, $position) use ($app, $db) {
+$app->get('/show/:id/:position', function ($id, $position) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    $data = $db->shows()->where('series', $series);
+    $data = $db->shows()->where('id', $id);
     if ($show = $data->fetch()) {
         $positions = array(
             'translator' => array($show['translator'], $show['tl_status']),
@@ -199,7 +199,7 @@ $app->get('/show/:series/:position', function ($series, $position) use ($app, $d
             )));
         }
         else { jerror("Position '$position' does not exist."); }
-    } else { jerror("Show '$series' does not exist."); }
+    } else { jerror("Show ID $id does not exist."); }
 })->name('get_show_position');
 
 $app->post('/show/new', function () use ($app, $db) {
