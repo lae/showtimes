@@ -51,27 +51,26 @@ function next_episode($show) {
     return $result;
 }
 
-function showa($dirty) {
-	$clean = array(
-        'id' => (int)$dirty['id'],
-        'series' => htmlspecialchars_decode($dirty['series'], ENT_QUOTES),
-        'airtime' => strtotime($dirty['airtime']),
-        'current_ep' => (int)$dirty['current_ep'],
-        'total_eps' => (int)$dirty['total_eps'],
-        'blog_link' => $dirty['blog_link'],
-        'status' => (int)$dirty['status'],
-        'translator' => $dirty['translator'],
-        'tl_status' => (int)$dirty['tl_status'],
-        'editor' => $dirty['editor'],
-        'ed_status' => (int)$dirty['ed_status'],
-        'typesetter' => $dirty['typesetter'],
-        'ts_status' => (int)$dirty['ts_status'],
-        'timer' => $dirty['timer'],
-        'tm_status' => (int)$dirty['tm_status'],
-        'channel' => $dirty['channel'],
-        'updated' => strtotime($dirty['updated'])+32400
+function showa($s) {
+	return array(
+        'id' => (int)$s['id'],
+        'series' => htmlspecialchars_decode($s['series'], ENT_QUOTES),
+        'airtime' => strtotime($s['airtime']),
+        'status' => (int)$s['status'],
+        'current_ep' => (int)$s['current_ep'],
+        'total_eps' => (int)$s['total_eps'],
+        'translator' => htmlspecialchars_decode($s['translator'], ENT_QUOTES),
+        'editor' => htmlspecialchars_decode($s['editor'], ENT_QUOTES),
+        'typesetter' => htmlspecialchars_decode($s['typesetter'], ENT_QUOTES),
+        'timer' => htmlspecialchars_decode($s['timer'], ENT_QUOTES),
+        'tl_status' => (int)$s['tl_status'],
+        'ed_status' => (int)$s['ed_status'],
+        'ts_status' => (int)$s['ts_status'],
+        'tm_status' => (int)$s['tm_status'],
+        'blog_link' => htmlspecialchars_decode($s['blog_link'], ENT_QUOTES),
+        'channel' => htmlspecialchars_decode($s['channel'], ENT_QUOTES),
+        'updated' => strtotime($s['updated'])+32400
     );
-    return $clean;
 }
 
 $app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
