@@ -25,6 +25,8 @@ $app->configureMode('development', function () use ($app) {
         'cookies.lifetime' => '15 minutes'
     ));
 });
+# Make 404 errors return a JSON encoded string
+$app->notFound(function () { sendjson(false, "Method not found."); });
 
 // JSON-encoded error to be called from within the application
 function jerror($message) {
