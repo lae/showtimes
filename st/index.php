@@ -94,33 +94,6 @@ $app->get('/show/:id', function ($id) use ($app, $db) {
     } else { echo jerror("Show ID $id does not exist"); }
 })->name('get_show')->conditions(array('id' => '[0-9]+'));
 
-$app->get('/shows', function () use ($app, $db) {
-    $shows = array('results' => '');
-    foreach ($db->shows() as $show) {
-        $shows['results'][] = showa($show);
-    }
-    $app->response()->header('Content-Type', 'application/json');
-    echo json_encode($shows);
-});
-
-$app->get('/completed_shows', function () use ($app, $db) {
-    $shows = array('results' => '');
-    foreach ($db->shows()->where('status',1) as $show) {
-        $shows['results'][] = showa($show);
-    }
-    $app->response()->header('Content-Type', 'application/json');
-    echo json_encode($shows);
-});
-
-$app->get('/incomplete_shows', function () use ($app, $db) {
-    $shows = array('results' => '');
-    foreach ($db->shows()->where('status != 1') as $show) {
-        $shows['results'][] = showa($show);
-    }
-    $app->response()->header('Content-Type', 'application/json');
-    echo json_encode($shows);
-});
-
 $app->get('/show/:id/substatus', function ($filter) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
     if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $id); }
