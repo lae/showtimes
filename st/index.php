@@ -100,9 +100,9 @@ $app->get('/show/:id', function ($id) use ($app, $db) {
     } else { echo jerror("Show ID $id does not exist"); }
 })->name('get_show')->conditions(array('id' => '[0-9]+'));
 
-$app->get('/show/:id/substatus', function ($filter) use ($app, $db) {
+$app->get('/show/:filter/substatus', function ($filter) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $id); }
+    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $filter); }
     else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
     if ($show = $data->fetch()) {
         $now = strtotime(date('Y-m-d H:i:s'));
@@ -124,7 +124,7 @@ $app->get('/show/:id/substatus', function ($filter) use ($app, $db) {
 
 $app->get('/show/:filter/:position', function ($filter, $position) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
-    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $id); }
+    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $filter); }
     else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
     if ($show = $data->fetch()) {
         $positions = array(
