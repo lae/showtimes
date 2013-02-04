@@ -51,55 +51,42 @@ function next_episode($show) {
     return $result;
 }
 
+function showa($dirty) {
+	$clean = array(
+        'id' => (int)$dirty['id'],
+        'series' => htmlspecialchars_decode($dirty['series'], ENT_QUOTES),
+        'airtime' => strtotime($dirty['airtime']),
+        'current_ep' => (int)$dirty['current_ep'],
+        'total_eps' => (int)$dirty['total_eps'],
+        'blog_link' => $dirty['blog_link'],
+        'status' => (int)$dirty['status'],
+        'translator' => $dirty['translator'],
+        'tl_status' => (int)$dirty['tl_status'],
+        'editor' => $dirty['editor'],
+        'ed_status' => (int)$dirty['ed_status'],
+        'typesetter' => $dirty['typesetter'],
+        'ts_status' => (int)$dirty['ts_status'],
+        'timer' => $dirty['timer'],
+        'tm_status' => (int)$dirty['tm_status'],
+        'channel' => $dirty['channel'],
+        'updated' => strtotime($dirty['updated'])+32400
+    );
+    return $clean;
+}
+
 // GET route
 $app->get('/show/:id', function ($id) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
     $data = $db->shows()->where('id', $id);
     if ($show = $data->fetch()) {
-        echo json_encode(array('results' => array(
-            'id' => $show['id'],
-            'series' => $show['series'],
-            'airtime' => strtotime($show['airtime']),
-            'current_ep' => $show['current_ep'],
-            'total_eps' => $show['total_eps'],
-            'blog_link' => $show['blog_link'],
-            'status' => $show['status'],
-            'translator' => $show['translator'],
-            'tl_status' => $show['tl_status'],
-            'editor' => $show['editor'],
-            'ed_status' => $show['ed_status'],
-            'typesetter' => $show['typesetter'],
-            'ts_status' => $show['ts_status'],
-            'timer' => $show['timer'],
-            'tm_status' => $show['tm_status'],
-            'channel' => $show['channel'],
-            'updated' => strtotime($show['updated'])+32400
-        )));
+        echo json_encode(array('results' => showa($show)));
     } else { echo jerror("Show ID $id does not exist"); }
 })->name('get_show')->conditions(array('id' => '[0-9]+'));
 
 $app->get('/shows', function () use ($app, $db) {
     $shows = array('results' => '');
     foreach ($db->shows() as $show) {
-        $shows['results'][] = array(
-            'id' => $show['id'],
-            'series' => htmlspecialchars_decode($show['series'], ENT_QUOTES),
-            'airtime' => strtotime($show['airtime']),
-            'current_ep' => $show['current_ep'],
-            'total_eps' => $show['total_eps'],
-            'blog_link' => $show['blog_link'],
-            'status' => $show['status'],
-            'translator' => $show['translator'],
-            'tl_status' => $show['tl_status'],
-            'editor' => $show['editor'],
-            'ed_status' => $show['ed_status'],
-            'typesetter' => $show['typesetter'],
-            'ts_status' => $show['ts_status'],
-            'timer' => $show['timer'],
-            'tm_status' => $show['tm_status'],
-            'channel' => $show['channel'],
-            'updated' => strtotime($show['updated'])+32400
-        );
+        $shows['results'][] = showa($show);
     }
     $app->response()->header('Content-Type', 'application/json');
     echo json_encode($shows);
@@ -108,25 +95,7 @@ $app->get('/shows', function () use ($app, $db) {
 $app->get('/completed_shows', function () use ($app, $db) {
     $shows = array('results' => '');
     foreach ($db->shows()->where('status',1) as $show) {
-        $shows['results'][] = array(
-            'id' => $show['id'],
-            'series' => htmlspecialchars_decode($show['series'], ENT_QUOTES),
-            'airtime' => strtotime($show['airtime']),
-            'current_ep' => $show['current_ep'],
-            'total_eps' => $show['total_eps'],
-            'blog_link' => $show['blog_link'],
-            'status' => $show['status'],
-            'translator' => $show['translator'],
-            'tl_status' => $show['tl_status'],
-            'editor' => $show['editor'],
-            'ed_status' => $show['ed_status'],
-            'typesetter' => $show['typesetter'],
-            'ts_status' => $show['ts_status'],
-            'timer' => $show['timer'],
-            'tm_status' => $show['tm_status'],
-            'channel' => $show['channel'],
-            'updated' => strtotime($show['updated'])+32400
-        );
+        $shows['results'][] = showa($show);
     }
     $app->response()->header('Content-Type', 'application/json');
     echo json_encode($shows);
@@ -135,25 +104,7 @@ $app->get('/completed_shows', function () use ($app, $db) {
 $app->get('/incomplete_shows', function () use ($app, $db) {
     $shows = array('results' => '');
     foreach ($db->shows()->where('status != 1') as $show) {
-        $shows['results'][] = array(
-            'id' => $show['id'],
-            'series' => htmlspecialchars_decode($show['series'], ENT_QUOTES),
-            'airtime' => strtotime($show['airtime']),
-            'current_ep' => $show['current_ep'],
-            'total_eps' => $show['total_eps'],
-            'blog_link' => $show['blog_link'],
-            'status' => $show['status'],
-            'translator' => $show['translator'],
-            'tl_status' => $show['tl_status'],
-            'editor' => $show['editor'],
-            'ed_status' => $show['ed_status'],
-            'typesetter' => $show['typesetter'],
-            'ts_status' => $show['ts_status'],
-            'timer' => $show['timer'],
-            'tm_status' => $show['tm_status'],
-            'channel' => $show['channel'],
-            'updated' => strtotime($show['updated'])+32400
-        );
+        $shows['results'][] = showa($show);
     }
     $app->response()->header('Content-Type', 'application/json');
     echo json_encode($shows);
