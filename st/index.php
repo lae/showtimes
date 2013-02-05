@@ -75,6 +75,17 @@ function showa($s) {
 #
 # GET ROUTES
 #
+$app->get('/refresh', function() use ($app, $db) {
+    $n = strtotime(date('Y-m-d H:i:s'));
+    foreach ($db->shows() as $show) {
+        $air = strtotime($show['airtime']);
+        if ($n > $air) {
+            if ($show['translator'] == 'Crunchyroll' && $show['tl_status'] != 1)
+                $show->update(array('tl_status' => 1));
+        }
+    }
+    sendjson(true, "Database updated.");
+});
 $app->get('/shows(/:filter)', function ($f) use ($app, $db) {
     $shows = array();
     switch ($f) {
@@ -86,7 +97,6 @@ $app->get('/shows(/:filter)', function ($f) use ($app, $db) {
     foreach ($data as $show) { $shows[] = showa($show); }
     sendjson(true, $shows);
 });
-
 $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
     if (preg_match('/^[0-9]+$/', $f)) {
         $_err = "Show ID $f does not exist.";
