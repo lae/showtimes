@@ -37,6 +37,7 @@ function next_episode($show) {
         'ed_status' => 0,
         'ts_status' => 0,
         'tm_status' => 0,
+        'encoded' => 0,
         'airtime' => $date,
         'current_ep' => $ep_inc,
         'status' => $status
@@ -48,6 +49,7 @@ function showa($s) {
 	return array(
         'id' => (int)$s['id'],
         'series' => htmlspecialchars_decode($s['series'], ENT_QUOTES),
+        'series_jp' => htmlspecialchars_decode($s['series_jp'], ENT_QUOTES),
         'airtime' => strtotime($s['airtime']),
         'status' => (int)$s['status'],
         'current_ep' => (int)$s['current_ep'],
@@ -60,6 +62,7 @@ function showa($s) {
         'ed_status' => (int)$s['ed_status'],
         'ts_status' => (int)$s['ts_status'],
         'tm_status' => (int)$s['tm_status'],
+        'encoded' => (int)$s['encoded'],
         'blog_link' => htmlspecialchars_decode($s['blog_link'], ENT_QUOTES),
         'channel' => htmlspecialchars_decode($s['channel'], ENT_QUOTES),
         'updated' => strtotime($s['updated'])+32400
@@ -134,7 +137,6 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
 #
 $app->post('/show/new', function () use ($app, $db) {
     $r = $app->request()->getBody();
-    $app->response()->header('Content-Type', 'application/json');
     if (!array_key_exists('key', $r))
         throw new Exception('You did not specify the API key.');
     if ($r['key'] != $app->key)
@@ -146,6 +148,7 @@ $app->post('/show/new', function () use ($app, $db) {
         $v = htmlspecialchars($v, ENT_QUOTES);
     $show = array(
         'series' => $data['series'],
+        'series_jp' => $data['series_jp'],
         'airtime' => $data['airtime'],
         'current_ep' => $data['current_ep'],
         'total_eps' => $data['total_eps'],
@@ -159,6 +162,7 @@ $app->post('/show/new', function () use ($app, $db) {
         'ts_status' => 0,
         'timer' => $data['timer'],
         'tm_status' => 0,
+        'encoded' => 0,
         'channel' => $data['channel'],
     );
     if (strlen($show['series']) < 1)
@@ -230,6 +234,7 @@ $app->post('/show/update', function () use ($app, $db) {
             }
             $changes = array(
                 'series' => $data['series'],
+                'series_jp' => $data['series_jp'],
                 'airtime' => $data['airtime'],
                 'current_ep' => $data['current_ep'],
                 'total_eps' => $data['total_eps'],
@@ -243,6 +248,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 'ts_status' => $data['ts_status'],
                 'timer' => $data['timer'],
                 'tm_status' => $data['tm_status'],
+                'encoded' => $data['encoded'],
                 'channel' => $data['channel'],
             );
             if (strlen($changes['series']) < 1)
@@ -261,6 +267,8 @@ $app->post('/show/update', function () use ($app, $db) {
                 $changes['ts_status'] = $show['ts_status'];
             if (!in_array($changes['tm_status'], array(0,1)))
                 $changes['tm_status'] = $show['tm_status'];
+            if (!in_array($changes['encoded'], array(0,1)))
+                $changes['encoded'] = $show['encoded'];
             if (!in_array($changes['status'], array(-1,0,1))) {
                 if ($changes['current_ep'] == $changes['total_eps'])
                     $changes['status'] = 1;
@@ -319,6 +327,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 'ed_status' => 0,
                 'ts_status' => 0,
                 'tm_status' => 0,
+                'encoded' => 0,
                 'airtime' => $date,
                 'current_ep' => $ep_dec,
                 'status' => $status
