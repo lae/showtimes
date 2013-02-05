@@ -181,7 +181,6 @@ $app->post('/show/new', function () use ($app, $db) {
 
 $app->post('/show/delete', function () use ($app, $db) {
     $r = $app->request()->getBody();
-    $app->response()->header('Content-Type', 'application/json');
     if (!array_key_exists('key', $r))
         throw new Exception('You did not specify the API key.');
     if ($r['key'] != $app->key)
