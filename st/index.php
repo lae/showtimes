@@ -136,33 +136,9 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
         }
         sendjson(true, $r);
     }
-    else {
+    else
         throw new Exception($_err);
-    }
 });
-
-$app->get('/show/:filter/:position', function ($filter, $position) use ($app, $db) {
-    $app->response()->header('Content-Type', 'application/json');
-    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $filter); }
-    else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
-    if ($show = $data->fetch()) {
-        $positions = array(
-            'translator' => array($show['translator'], $show['tl_status']),
-            'editor' => array($show['editor'], $show['ed_status']),
-            'typesetter' => array($show['typesetter'], $show['ts_status']),
-            'timer' => array($show['timer'], $show['tm_status'])
-        );
-        if (count($positions[$position]) == 2) {
-            echo json_encode(array('results' => array(
-                'id' => $show['id'],
-                'position' => $position,
-                'name' => $positions[$position][0],
-                'status' => $positions[$position][1]
-            )));
-        }
-        else { jerror("Position '$position' does not exist."); }
-    } else { jerror($_err); }
-})->name('get_show_position');
 
 $app->post('/show/new', function () use ($app, $db) {
     $r = $app->request()->getBody();
