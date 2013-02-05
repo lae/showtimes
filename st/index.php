@@ -26,7 +26,9 @@ $app->configureMode('development', function () use ($app) {
     ));
 });
 # Make 404 errors return a JSON encoded string
-$app->notFound(function () { sendjson(false, "Method not found."); });
+$app->notFound(function () { sendjson(false, "Route not found."); });
+# Do the same with exceptions
+$app->error(function (\Exception $e) use ($app) { sendjson(false, $e->getMessage()); });
 
 // JSON-encoded error to be called from within the application
 function jerror($message) {
@@ -38,7 +40,7 @@ function jerror($message) {
 function sendjson($status, $results) {
     global $app;
     $app->response()->header('Content-Type', 'application/json');
-    if($status===true) { $r = array('status' => true, 'results' => $results); }
+    if ($status === true) { $r = array('status' => true, 'results' => $results); }
     else { $r = array('status' => false, 'message' => $results); }
     echo json_encode($r);
 }
