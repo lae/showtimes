@@ -12,19 +12,6 @@ $app = new \Slim\Slim(array('mode' => 'production'));
 $app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
-$app->configureMode('production', function () use ($app) {
-    $app->config(array(
-        'log.enable' => true,
-        'debug' => false
-    ));
-});
-$app->configureMode('development', function () use ($app) {
-    $app->config(array(
-        'log.enable' => false,
-        'debug' => true,
-        'cookies.lifetime' => '15 minutes'
-    ));
-});
 # Make 404 errors return a JSON encoded string
 $app->notFound(function () { sendjson(false, "Route not found."); });
 # Do the same with exceptions
