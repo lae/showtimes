@@ -26,6 +26,13 @@ function sendjson($status, $results) {
         $r = array('status' => false, 'message' => $results);
     echo json_encode($r);
 }
+function check_api_key($request) {
+    global $app;
+    if (!array_key_exists('key', $request))
+        throw new Exception('You did not specify the API key.');
+    elseif ($request['key'] != $app->key)
+        throw new Exception('Unauthorized API key.');
+}
 // Update to next episode/increase date and clear counters.
 function next_episode($show) {
     $date = new DateTime($show['airtime']);
@@ -137,10 +144,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
 #
 $app->post('/show/new', function () use ($app, $db) {
     $r = $app->request()->getBody();
-    if (!array_key_exists('key', $r))
-        throw new Exception('You did not specify the API key.');
-    if ($r['key'] != $app->key)
-        throw new Exception('Unauthorized API key.');
+    check_api_key($r);
     if (!array_key_exists('data', $r))
         throw new Exception('You did not specify any information for the new show.');
     $data = $r['data'];
@@ -181,10 +185,7 @@ $app->post('/show/new', function () use ($app, $db) {
 
 $app->post('/show/delete', function () use ($app, $db) {
     $r = $app->request()->getBody();
-    if (!array_key_exists('key', $r))
-        throw new Exception('You did not specify the API key.');
-    if ($r['key'] != $app->key)
-        throw new Exception('Unauthorized API key.');
+    check_api_key($r);
     if (!array_key_exists('id', $r) && !array_key_exists('series', $r))
         throw new Exception('You need to specify either the series name or ID to delete it.');
     else {
@@ -202,11 +203,7 @@ $app->post('/show/delete', function () use ($app, $db) {
 
 $app->post('/show/update', function () use ($app, $db) {
     $r = $app->request()->getBody();
-    $app->response()->header('Content-Type', 'application/json');
-    if (!array_key_exists('key', $r))
-        throw new Exception('You did not specify the API key.');
-    if ($r['key'] != $app->key)
-        throw new Exception('Unauthorized API key.');
+    check_api_key($r);
     if (!array_key_exists('method', $r))
         throw new Exception('You did not specify a method.');
     if (!array_key_exists('id', $r) && !array_key_exists('series', $r))
