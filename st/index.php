@@ -90,6 +90,7 @@ $app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
         case NULL: $data = $db->shows(); break;
+        default: $app->notFound(); break;
     }
     foreach ($data as $show) { $shows[] = showa($show); }
     sendjson(true, $shows);
