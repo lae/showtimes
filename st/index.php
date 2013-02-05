@@ -8,7 +8,7 @@ $pdo = new PDO('mysql:host=localhost;dbname=commie', 'commie', 'Hammer und Siche
 $db = new NotORM($pdo);
 
 \Slim\Slim::registerAutoloader();
-$app = new \Slim\Slim(array('mode' => 'development'));
+$app = new \Slim\Slim(array('mode' => 'production'));
 $app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
@@ -28,7 +28,7 @@ $app->configureMode('development', function () use ($app) {
 # Make 404 errors return a JSON encoded string
 $app->notFound(function () { sendjson(false, "Route not found."); });
 # Do the same with exceptions
-$app->error(function (\Exception $e) use ($app) { sendjson(false, $e->getMessage()); });
+$app->error(function (\Exception $e) { sendjson(false, $e->getMessage()); });
 
 // JSON-encoded error to be called from within the application
 function jerror($message) {
@@ -40,8 +40,10 @@ function jerror($message) {
 function sendjson($status, $results) {
     global $app;
     $app->response()->header('Content-Type', 'application/json');
-    if ($status === true) { $r = array('status' => true, 'results' => $results); }
-    else { $r = array('status' => false, 'message' => $results); }
+    if ($status === true)
+        $r = array('status' => true, 'results' => $results);
+    else
+        $r = array('status' => false, 'message' => $results);
     echo json_encode($r);
 }
 // Update to next episode/increase date and clear counters.
@@ -83,10 +85,12 @@ function showa($s) {
         'updated' => strtotime($s['updated'])+32400
     );
 }
-
-$app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
+#
+# GET ROUTES
+#
+$app->get('/shows(/:filter)', function ($f) use ($app, $db) {
     $shows = array();
-    switch ($filter) {
+    switch ($f) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
         case NULL: $data = $db->shows(); break;
@@ -96,36 +100,46 @@ $app->get('/shows(/:filter)', function ($filter) use ($app, $db) {
     sendjson(true, $shows);
 });
 
-// GET route
-$app->get('/show/:id', function ($id) use ($app, $db) {
-    $app->response()->header('Content-Type', 'application/json');
-    $data = $db->shows()->where('id', $id);
-    if ($show = $data->fetch()) {
-        echo json_encode(array('results' => showa($show)));
-    } else { echo jerror("Show ID $id does not exist"); }
-})->name('get_show')->conditions(array('id' => '[0-9]+'));
-
-$app->get('/show/:filter/substatus', function ($filter) use ($app, $db) {
-    $app->response()->header('Content-Type', 'application/json');
-    if (preg_match('/^[0-9]+$/', $filter)) { $_err = "Show ID $id does not exist."; $data = $db->shows()->where('id', $filter); }
-    else { $_err = "Show name '$filter' not found."; $data = $db->shows()->where('series', htmlspecialchars($filter, ENT_QUOTES)); }
-    if ($show = $data->fetch()) {
-        $now = strtotime(date('Y-m-d H:i:s'));
-        $air = strtotime($show['airtime']);
-        if ($show['current_ep'] >= $show['total_eps']) { $stalled = $v = 'completed'; }
-        elseif ($air > $now) { $stalled = 'broadcaster'; $v = $show['channel']; }
-        elseif ($show['tl_status'] == 0) { $stalled = 'translator'; $v = $show['translator']; }
-        elseif ($show['ed_status'] == 0) { $stalled = 'editor'; $v = $show['editor']; }
-        elseif ($show['tm_status'] == 0) { $stalled = 'timer'; $v = $show['timer']; }
-        elseif ($show['ts_status'] == 0) { $stalled = 'typesetter'; $v = $show['typesetter']; }
-        echo json_encode(array('results' => array(
-            'id' => $show['id'],
-            'position' => $stalled,
-            'value' => $v,
-            'updated' => strtotime($show['updated'])+32400
-        )));
-    } else { jerror($_err); }
-})->name('get_show_substatus');
+$app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
+    if (preg_match('/^[0-9]+$/', $f)) {
+        $_err = "Show ID $f does not exist.";
+        $query = $db->shows()->where('id', (int)$f);
+    }
+    else {
+        $_err = "Show \"$f\" does not exist.";
+        $query = $db->shows()->where('series', htmlspecialchars($f, ENT_QUOTES));
+    }
+    if ($show = $query->fetch()) {
+        switch ($m) {
+            case 'substatus':
+                if ($show['current_ep'] >= $show['total_eps'] && $show['total_eps'] != 0)
+                    $who = array('completed', 'completed');
+                elseif (strtotime($show['airtime']) > strtotime(date('Y-m-d H:i:s')))
+                    $who = array('broadcaster', $show['channel']);
+                elseif ($show['tl_status'] == 0)
+                    $who = array('translator', $show['translator']);
+                elseif ($show['ed_status'] == 0)
+                    $who = array('editor', $show['editor']);
+                elseif ($show['tm_status'] == 0)
+                    $who = array('timer', $show['timer']);
+                elseif ($show['ts_status'] == 0)
+                    $who = array('typesetter', $show['typesetter']);
+                $r = array(
+                    'id' => (int)$show['id'],
+                    'position' => $who[0],
+                    'value' => $who[1],
+                    'updated' => strtotime($show['updated'])+32400
+                );
+                break;
+            case NULL: $r = showa($show); break;
+            default: $app->notFound(); break;
+        }
+        sendjson(true, $r);
+    }
+    else {
+        throw new Exception($_err);
+    }
+});
 
 $app->get('/show/:filter/:position', function ($filter, $position) use ($app, $db) {
     $app->response()->header('Content-Type', 'application/json');
