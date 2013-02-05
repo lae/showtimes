@@ -8,7 +8,7 @@ $pdo = new PDO('mysql:host=localhost;dbname=commie', 'commie', 'Hammer und Siche
 $db = new NotORM($pdo);
 
 \Slim\Slim::registerAutoloader();
-$app = new \Slim\Slim(array('mode' => 'production'));
+$app = new \Slim\Slim(array('debug' => false));
 $app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
