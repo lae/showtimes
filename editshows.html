@@ -11,7 +11,7 @@ function padmin(m){if(m.length<2){return '0'+m;}else{return m;}}
 function loadEditForm(sid){
   $.getJSON("http://commie.milkteafuzz.com/st/show/"+sid, function(data){
     $.each(data.results, function(key, val) { $("#"+key).val(val); });
-    ['tl_status','ts_status','ed_status','tm_status'].map( function(key) {
+    ['tl_status','ts_status','ed_status','tm_status','encoded'].map( function(key) {
       if(data.results[key]==1){var res=true;}else{var res=false;}
       $("#"+key).attr('checked',res)
     });
@@ -40,6 +40,7 @@ $(document).ready(function(){
     requestObj.method = "change_everything";
     data = new Object();
     data.series = $('#series').val();
+    data.series_jp = $('#series_jp').val();
     data.airtime = $('#year').val() + '-' + $('#month').val() + '-' + $('#day').val() + ' ' + $('#hour').val() + ':' + padmin($('#minute').val());
     data.current_ep = parseInt($('#current_ep').val(),10);
     data.total_eps = parseInt($('#total_eps').val(),10);
@@ -56,6 +57,7 @@ $(document).ready(function(){
     if($('#ts_status').is(':checked')) { data.ts_status = 1; } else { data.ts_status = 0; }
     data.timer = $('#timer').val();
     if($('#tm_status').is(':checked')) { data.tm_status = 1; } else { data.tm_status = 0; }
+    if($('#encoded').is(':checked')) { data.encoded = 1; } else { data.encoded = 0; }
     requestObj.data = data;
     var form = $(this),
     formUrl = form.attr('action'),
@@ -148,6 +150,8 @@ $('#shows').dataTable({
       <input type="text" id="key" name="key" /><br />
     <label for="series">Series</label>
       <input type="text" id="series" name="series" /><br />
+    <label for="series_jp">シリーズ</label>
+      <input type="text" id="series_jp" name="series_jp" /><br />
     <label>Airtime</label>
       <input type="text" name="year" id="year" maxlength="4" /> - 
       <input type="number" name="month" id="month" min="1" max="12" /> - 
@@ -173,7 +177,7 @@ $('#shows').dataTable({
   </fieldset>
   <fieldset>
     <legend>Staff</legend>
-    <p>Checkboxes indicate whether or not they're finished with their part of an unreleased episode.</p><br />
+    <p>Checkboxes indicate whether or not they're finished with their part of the currently unreleased episode.</p><br />
     <label for="translator">Translator</label>
       <input type="text" id="translator" name="translator" />
       <input type="checkbox" id="tl_status" name="tl_status" /><br />
@@ -186,6 +190,8 @@ $('#shows').dataTable({
     <label for="typesetter">Typesetter</label>
       <input type="text" id="typesetter" name="typesetter" />
       <input type="checkbox" id="ts_status" name="ts_status" /><br />
+    <label for="encoded">Encode Status</label>
+      <input type="checkbox" id="encoded" name="encoded" /><br />
   </fieldset>
   <input type="submit" id="updatebutton" value="Update show" />
   <input type="reset" value="Reset fields" />

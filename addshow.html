@@ -18,6 +18,7 @@ $(document).ready(function(){
     requestObj.key = $('#key').val();
     data = new Object();
     data.series = $('#series').val();
+    data.series_jp = $('#series_jp').val();
     data.airtime = $('#year').val() + '-' + $('#month').val() + '-' + $('#day').val() + ' ' + $('#hour').val() + ':' + padmin($('#minute').val());
     data.current_ep = parseInt($('#current_ep').val(),10);
     data.total_eps = parseInt($('#total_eps').val(),10);
@@ -72,6 +73,8 @@ label { width: 200px; }
       <input type="text" id="key" name="key" /><br />
     <label for="series">Series</label>
       <input type="text" id="series" name="series" /><br />
+    <label for="series_jp">シリーズ</label>
+      <input type="text" id="series_jp" name="series_jp" /><br />
     <label>Airtime</label>
       <input type="text" name="year" id="year" maxlength="4" /> - 
       <input type="number" name="month" id="month" min="1" max="12" /> - 
