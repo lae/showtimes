@@ -71,7 +71,7 @@ function check_if_sane_sql($row) {
                 err("Value given for '$f' must be shorter than $len characters.");
         }
         elseif ($t == 'date') {
-            if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9]$/', $v))
+            if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', $v))
                 err("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
         }
     }
@@ -92,7 +92,7 @@ function sanitize_show($data, $defaults = array()) {
         }
     }
     foreach ($defaults as $f => $v) {
-        if (!array_key_exists($f, $show))
+        if (!array_key_exists($f, $show) && ($f != 'id' && $f != 'updated'))
             $show[$f] = $v;
     }
     if (strlen($show['series']) < 1 || !array_key_exists('series', $show))
@@ -158,11 +158,14 @@ function showa($s) {
 $app->get('/refresh', function() use ($app, $db) {
     $n = strtotime(date('Y-m-d H:i:s'));
     foreach ($db->shows() as $show) {
-        $air = strtotime($show['airtime']);
+        /* 04:12:25 <&herkz> what if it's latecast?
+         * 04:14:46 <&lae> if you want to .done those shows, I can take CR shows off the cronjob
+         * 04:15:31 <&herkz> probably should */
+        /* $air = strtotime($show['airtime']);
         if ($n > $air) {
             if ($show['translator'] == 'Crunchyroll' && $show['tl_status'] != 1)
                 $show->update(array('tl_status' => 1));
-        }
+        } */
     }
     sendjson(true, "Database updated.");
 });
@@ -271,55 +274,7 @@ $app->post('/show/update', function () use ($app, $db) {
         case 'change_everything':
             if (!array_key_exists('data', $r))
                 err('You did not specify any information for this show.');
-            $data = $r['data'];
-            foreach ($data as $f => &$v) {
-                $v = htmlspecialchars($v, ENT_QUOTES);
-                if(!in_array("$f", $columns))
-                    err("Key '$f is invalid.");
-            }
-            $changes = array(
-                'series' => $data['series'],
-                'series_jp' => $data['series_jp'],
-                'airtime' => $data['airtime'],
-                'current_ep' => $data['current_ep'],
-                'total_eps' => $data['total_eps'],
-                'blog_link' => $data['blog_link'],
-                'status' => $data['status'],
-                'translator' => $data['translator'],
-                'tl_status' => $data['tl_status'],
-                'editor' => $data['editor'],
-                'ed_status' => $data['ed_status'],
-                'typesetter' => $data['typesetter'],
-                'ts_status' => $data['ts_status'],
-                'timer' => $data['timer'],
-                'tm_status' => $data['tm_status'],
-                'encoded' => $data['encoded'],
-                'channel' => $data['channel'],
-            );
-            if (strlen($changes['series']) < 1)
-                err('You\'ll want to enter a series name.');
-            elseif (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (1?[0-9]|2[0-3]):[0-5][0-9]$/', $changes['airtime']))
-                err('Value given for airtime must be a valid date with format YYYY-m-d H:MM');
-            elseif (!is_numeric($changes['current_ep']))
-                err('Value given for current_ep is not numeric.');
-            elseif (!is_numeric($changes['total_eps']))
-                err('Value given for total_eps is not numeric.');
-            if (!in_array($changes['tl_status'], array(0,1)))
-                $changes['tl_status'] = $show['tl_status'];
-            if (!in_array($changes['ed_status'], array(0,1)))
-                $changes['ed_status'] = $show['ed_status'];
-            if (!in_array($changes['ts_status'], array(0,1)))
-                $changes['ts_status'] = $show['ts_status'];
-            if (!in_array($changes['tm_status'], array(0,1)))
-                $changes['tm_status'] = $show['tm_status'];
-            if (!in_array($changes['encoded'], array(0,1)))
-                $changes['encoded'] = $show['encoded'];
-            if (!in_array($changes['status'], array(-1,0,1))) {
-                if ($changes['current_ep'] == $changes['total_eps'])
-                    $changes['status'] = 1;
-                else
-                    $changes['status'] = $show['status'];
-            }
+            $changes = sanitize_show($r['data'], $show);
             $result = $show->update($changes);
             sendjson((bool)$result, 'Show updated. (if nothing changed, this will show up as an error.)');
             break;
