@@ -33,6 +33,82 @@ function check_api_key($request) {
     elseif ($request['key'] != $app->key)
         throw new Exception('Unauthorized API key.');
 }
+function check_if_sane_sql($row) {
+    $columns = array(
+        'series' => 'varchar(127)', 'series_jp' => 'varchar(127)', 'airtime' => 'date',
+        'current_ep' => 'smallint unsigned', 'total_eps' => 'smallint unsigned',
+        'status' => 'tinyint', 'translator' => 'varchar(63)', 'tl_status' => 'tinyint unsigned',
+        'editor' => 'varchar(63)', 'ed_status' => 'tinyint unsigned', 'typesetter' => 'varchar(63)',
+        'ts_status' => 'tinyint unsigned', 'timer' => 'varchar(63)', 'tm_status' => 'tinyint unsigned',
+        'encoded' => 'tinyint', 'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)');
+    foreach ($row as $f => $v) {
+        $t = $columns[$f];
+        if (preg_match('/^tinyint/', $t)) {
+            if (preg_match('/\bunsigned\b/', $t)) {
+                if (!is_numeric($v) || $v < 0 || $v > 255)
+                    throw new Exception("Value given for '$f' must be a numeral between 0 and 255.");
+            }
+            else {
+                if (!is_numeric($v) || $v < -127 || $v > 128)
+                    throw new Exception("Value given for '$f'must be a numeral between -128 and 127.");
+            }
+        }
+        elseif (preg_match('/^smallint/', $t)) {
+            if (preg_match('/\bunsigned\b/', $t)) {
+                if (!is_numeric($v) || $v < 0 || $v > 65535)
+                    throw new Exception("Value given for '$f' must be a numeral between 0 and 65535.");
+            }
+            else {
+                if (!is_numeric($v) || $v < -32768 || $v > 32767)
+                    throw new Exception("Value given for '$f' must be a numeral between -32768 and 32767.");
+            }
+        }
+        elseif (preg_match('/^varchar/', $t)) {
+            preg_match('/(?<=varchar\()\d+/', $t, $len);
+            $len = $len[0];
+            if (strlen($v) > $len)
+                throw new Exception("Value given for '$f' must be shorter than $len characters.");
+        }
+        elseif ($t == 'date') {
+            if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9]$/', $v))
+                throw new Exception("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
+        }
+    }
+
+}
+function sanitize_show($data, $defaults = array()) {
+    $show = array();
+    foreach ($data as $f => $v) {
+        switch ($f) {
+            case 'series': case 'series_jp': case 'blog_link': case 'translator':
+            case 'editor': case 'typesetter': case 'timer': case 'channel':
+                $show[$f] = htmlspecialchars($v, ENT_QUOTES);
+                break;
+            case 'current_ep': case 'total_eps': case 'status': case 'tl_status':
+            case 'ed_status': case 'ts_status': case 'tm_status': case 'encoded':
+            case 'airtime':
+                $show[$f] = $v;
+        }
+    }
+    foreach ($defaults as $f => $v) {
+        if (!array_key_exists($f, $show))
+            $show[$f] = $v;
+    }
+    if (strlen($show['series']) < 1 || !array_key_exists('series', $show))
+        throw new Exception("You need to specify a name for the series.");
+    if (!in_array($show['status'], array(-1,0,1)) || !array_key_exists('status', $show)) {
+        if ($show['current_ep'] == $show['total_eps'] && ($show['total_eps'] != 0 && array_key_exists('total_eps', $show)))
+            $show['status'] = 1;
+        else
+            $show['status'] = 0;
+    }
+    foreach (array('tl_status', 'ed_status', 'ts_status', 'tm_status', 'encoded') as $f) {
+        if (!in_array($show[$f], array(0,1)))
+            $show[$f] = 0;
+    }
+    check_if_sane_sql($show);
+    return $show;
+}
 // Update to next episode/increase date and clear counters.
 function next_episode($show) {
     $date = new DateTime($show['airtime']);
@@ -147,41 +223,13 @@ $app->post('/show/new', function () use ($app, $db) {
     check_api_key($r);
     if (!array_key_exists('data', $r))
         throw new Exception('You did not specify any information for the new show.');
-    $data = $r['data'];
-    foreach ($data as $f => &$v)
-        $v = htmlspecialchars($v, ENT_QUOTES);
-    $show = array(
-        'series' => $data['series'],
-        'series_jp' => $data['series_jp'],
-        'airtime' => $data['airtime'],
-        'current_ep' => $data['current_ep'],
-        'total_eps' => $data['total_eps'],
-        'blog_link' => $data['blog_link'],
-        'status' => $data['status'],
-        'translator' => $data['translator'],
-        'tl_status' => 0,
-        'editor' => $data['editor'],
-        'ed_status' => 0,
-        'typesetter' => $data['typesetter'],
-        'ts_status' => 0,
-        'timer' => $data['timer'],
-        'tm_status' => 0,
-        'encoded' => 0,
-        'channel' => $data['channel'],
-    );
-    if (strlen($show['series']) < 1)
-        throw new Exception('You\'ll want to enter a series name.');
-    elseif (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (1?[0-9]|2[0-3]):[0-5][0-9]$/', $show['airtime']))
-        throw new Exception('Value given for airtime must be a valid date with format YYYY-m-d H:MM');
-    elseif (!is_numeric($show['current_ep']))
-        throw new Exception('Value given for current_ep is not numeric.');
-    elseif (!is_numeric($show['total_eps']))
-        throw new Exception('Value given for total_eps is not numeric.');
-    if ($show['status'] == '')
-        $show['status'] = 0;
+    $show = sanitize_show($r['data']);
     $result = $db->shows()->insert($show);
-    sendjson((bool)$result, 'Show added.');
-})->name('new_show');
+    if ($result)
+        sendjson(true, 'Show added.');
+    else
+        sendjson(false, 'Show could not be added.');
+});
 
 $app->post('/show/delete', function () use ($app, $db) {
     $r = $app->request()->getBody();
