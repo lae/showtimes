@@ -26,12 +26,13 @@ function sendjson($status, $results) {
         $r = array('status' => false, 'message' => $results);
     echo json_encode($r);
 }
+function err($msg) { sendjson(false, $msg); global $app; $app->stop(); }
 function check_api_key($request) {
     global $app;
     if (!array_key_exists('key', $request))
-        throw new Exception('You did not specify the API key.');
+        err('You did not specify the API key.');
     elseif ($request['key'] != $app->key)
-        throw new Exception('Unauthorized API key.');
+        err('Unauthorized API key.');
 }
 function check_if_sane_sql($row) {
     $columns = array(
@@ -46,32 +47,32 @@ function check_if_sane_sql($row) {
         if (preg_match('/^tinyint/', $t)) {
             if (preg_match('/\bunsigned\b/', $t)) {
                 if (!is_numeric($v) || $v < 0 || $v > 255)
-                    throw new Exception("Value given for '$f' must be a numeral between 0 and 255.");
+                    err("Value given for '$f' must be a numeral between 0 and 255.");
             }
             else {
                 if (!is_numeric($v) || $v < -127 || $v > 128)
-                    throw new Exception("Value given for '$f'must be a numeral between -128 and 127.");
+                    err("Value given for '$f'must be a numeral between -128 and 127.");
             }
         }
         elseif (preg_match('/^smallint/', $t)) {
             if (preg_match('/\bunsigned\b/', $t)) {
                 if (!is_numeric($v) || $v < 0 || $v > 65535)
-                    throw new Exception("Value given for '$f' must be a numeral between 0 and 65535.");
+                    err("Value given for '$f' must be a numeral between 0 and 65535.");
             }
             else {
                 if (!is_numeric($v) || $v < -32768 || $v > 32767)
-                    throw new Exception("Value given for '$f' must be a numeral between -32768 and 32767.");
+                    err("Value given for '$f' must be a numeral between -32768 and 32767.");
             }
         }
         elseif (preg_match('/^varchar/', $t)) {
             preg_match('/(?<=varchar\()\d+/', $t, $len);
             $len = $len[0];
             if (strlen($v) > $len)
-                throw new Exception("Value given for '$f' must be shorter than $len characters.");
+                err("Value given for '$f' must be shorter than $len characters.");
         }
         elseif ($t == 'date') {
             if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9]$/', $v))
-                throw new Exception("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
+                err("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
         }
     }
 
@@ -95,7 +96,7 @@ function sanitize_show($data, $defaults = array()) {
             $show[$f] = $v;
     }
     if (strlen($show['series']) < 1 || !array_key_exists('series', $show))
-        throw new Exception("You need to specify a name for the series.");
+        err("You need to specify a name for the series.");
     if (!in_array($show['status'], array(-1,0,1)) || !array_key_exists('status', $show)) {
         if ($show['current_ep'] == $show['total_eps'] && ($show['total_eps'] != 0 && array_key_exists('total_eps', $show)))
             $show['status'] = 1;
@@ -213,7 +214,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
         sendjson(true, $r);
     }
     else
-        throw new Exception($_err);
+        err($_err);
 });
 #
 # POST ROUTES
@@ -222,7 +223,7 @@ $app->post('/show/new', function () use ($app, $db) {
     $r = $app->request()->getBody();
     check_api_key($r);
     if (!array_key_exists('data', $r))
-        throw new Exception('You did not specify any information for the new show.');
+        err('You did not specify any information for the new show.');
     $show = sanitize_show($r['data']);
     $result = $db->shows()->insert($show);
     if ($result)
@@ -235,7 +236,7 @@ $app->post('/show/delete', function () use ($app, $db) {
     $r = $app->request()->getBody();
     check_api_key($r);
     if (!array_key_exists('id', $r) && !array_key_exists('series', $r))
-        throw new Exception('You need to specify either the series name or ID to delete it.');
+        err('You need to specify either the series name or ID to delete it.');
     else {
         if ($where_value = $r['id'])
             $where = 'id';
@@ -243,7 +244,7 @@ $app->post('/show/delete', function () use ($app, $db) {
             $where = 'series';
         $data = $db->shows()->where($where, $where_value);
         if (!$show = $data->fetch())
-            throw new Exception('Show does not exist.');
+            err('Show does not exist.');
         $result = $show->delete();
         sendjson((bool)$result, 'Show deleted.');
     }
@@ -253,9 +254,9 @@ $app->post('/show/update', function () use ($app, $db) {
     $r = $app->request()->getBody();
     check_api_key($r);
     if (!array_key_exists('method', $r))
-        throw new Exception('You did not specify a method.');
+        err('You did not specify a method.');
     if (!array_key_exists('id', $r) && !array_key_exists('series', $r))
-        throw new Exception('You need to specify either the series name or ID to update it.');
+        err('You need to specify either the series name or ID to update it.');
     else {
         if ($where_value = $r['id'])
             $where = 'id';
@@ -263,18 +264,18 @@ $app->post('/show/update', function () use ($app, $db) {
             $where = 'series';
         $data = $db->shows()->where($where, $where_value);
         if (!$show = $data->fetch())
-            throw new Exception('Show does not exist.');
+            err('Show does not exist.');
         $columns = array_keys(iterator_to_array($show));
     }
     switch ($r['method']) {
         case 'change_everything':
             if (!array_key_exists('data', $r))
-                throw new Exception('You did not specify any information for this show.');
+                err('You did not specify any information for this show.');
             $data = $r['data'];
             foreach ($data as $f => &$v) {
                 $v = htmlspecialchars($v, ENT_QUOTES);
                 if(!in_array("$f", $columns))
-                    throw new Exception("Key '$f is invalid.");
+                    err("Key '$f is invalid.");
             }
             $changes = array(
                 'series' => $data['series'],
@@ -296,13 +297,13 @@ $app->post('/show/update', function () use ($app, $db) {
                 'channel' => $data['channel'],
             );
             if (strlen($changes['series']) < 1)
-                throw new Exception('You\'ll want to enter a series name.');
+                err('You\'ll want to enter a series name.');
             elseif (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (1?[0-9]|2[0-3]):[0-5][0-9]$/', $changes['airtime']))
-                throw new Exception('Value given for airtime must be a valid date with format YYYY-m-d H:MM');
+                err('Value given for airtime must be a valid date with format YYYY-m-d H:MM');
             elseif (!is_numeric($changes['current_ep']))
-                throw new Exception('Value given for current_ep is not numeric.');
+                err('Value given for current_ep is not numeric.');
             elseif (!is_numeric($changes['total_eps']))
-                throw new Exception('Value given for total_eps is not numeric.');
+                err('Value given for total_eps is not numeric.');
             if (!in_array($changes['tl_status'], array(0,1)))
                 $changes['tl_status'] = $show['tl_status'];
             if (!in_array($changes['ed_status'], array(0,1)))
@@ -324,12 +325,12 @@ $app->post('/show/update', function () use ($app, $db) {
             break;
         case 'position_status':
             if (!array_key_exists('position', $r))
-                throw new Exception('You did not specify a position.');
+                err('You did not specify a position.');
             if (!array_key_exists('value', $r))
-                throw new Exception('You did not specify a status.');
+                err('You did not specify a status.');
             $v = $r['value'];
             if ($v != 1 && $v != 0)
-                throw new Exception('Status should either be 0 or 1.');
+                err('Status should either be 0 or 1.');
             switch ($r['position']) {
                 case 'translator':
                     $result = $show->update(array('tl_status' => $v));
@@ -348,7 +349,7 @@ $app->post('/show/update', function () use ($app, $db) {
                     $total = $show['tl_status'] + $show['ed_status'] + $show['ts_status'];
                     break;
                 default:
-                    throw new Exception("Position '" . $r['position'] . "' does not exist.");
+                    err("Position '" . $r['position'] . "' does not exist.");
             }
             $total += $v;
             if ($total == 4) {
@@ -380,29 +381,29 @@ $app->post('/show/update', function () use ($app, $db) {
             break;
         case 'current_episode':
             if (!array_key_exists('value', $r))
-                throw new Exception('You did not specify a new value.');
+                err('You did not specify a new value.');
             $result = $show->update(array('current_ep' => $r['value']));
             sendjson((bool)$result, 'Current episode count updated.');
             break;
         case 'total_episodes':
             if (!array_key_exists('value', $r))
-                throw new Exception('You did not specify a new value.');
+                err('You did not specify a new value.');
             $result = $show->update(array('total_eps' => $r['value']));
             sendjson((bool)$result, 'Total episode count updated.');
             break;
         case 'position':
             if (!array_key_exists('position', $r))
-                throw new Exception('You did not specify a position.');
+                err('You did not specify a position.');
             if (!array_key_exists('value', $r))
-                throw new Exception('You did not specify a name.');
+                err('You did not specify a name.');
             $positions = array('translator', 'editor', 'typesetter', 'timer');
             if (!in_array($r['position'], $positions))
-                throw new Exception('Position does not exist.');
+                err('Position does not exist.');
             $result = $show->update(array($r['position'] => $r['value']));
             sendjson((bool)$result, 'Position updated (' . $r['position'] . ' is now ' . $r['value'] . ').');
             break;
         default:
-            throw new Exception("Specified method '" . $r['method'] . "' does not exist.");
+            err("Specified method '" . $r['method'] . "' does not exist.");
     }
 })->name('update_show');
 
