@@ -129,28 +129,27 @@ function next_episode($show) {
     return $result;
 }
 
-function showa($s) {
-	return array(
-        'id' => (int)$s['id'],
-        'series' => htmlspecialchars_decode($s['series'], ENT_QUOTES),
-        'series_jp' => htmlspecialchars_decode($s['series_jp'], ENT_QUOTES),
-        'airtime' => strtotime($s['airtime']),
-        'status' => (int)$s['status'],
-        'current_ep' => (int)$s['current_ep'],
-        'total_eps' => (int)$s['total_eps'],
-        'translator' => htmlspecialchars_decode($s['translator'], ENT_QUOTES),
-        'editor' => htmlspecialchars_decode($s['editor'], ENT_QUOTES),
-        'typesetter' => htmlspecialchars_decode($s['typesetter'], ENT_QUOTES),
-        'timer' => htmlspecialchars_decode($s['timer'], ENT_QUOTES),
-        'tl_status' => (int)$s['tl_status'],
-        'ed_status' => (int)$s['ed_status'],
-        'ts_status' => (int)$s['ts_status'],
-        'tm_status' => (int)$s['tm_status'],
-        'encoded' => (int)$s['encoded'],
-        'blog_link' => htmlspecialchars_decode($s['blog_link'], ENT_QUOTES),
-        'channel' => htmlspecialchars_decode($s['channel'], ENT_QUOTES),
-        'updated' => strtotime($s['updated'])+32400
-    );
+function prep_show($s) {
+    $show = array();
+    foreach ($s as $f => $v) {
+        switch ($f) {
+            case 'series': case 'series_jp': case 'blog_link': case 'translator':
+            case 'editor': case 'typesetter': case 'timer': case 'channel':
+                $show[$f] = htmlspecialchars_decode($v, ENT_QUOTES);
+                break;
+            case 'id': case 'current_ep': case 'total_eps': case 'status':
+            case 'tl_status': case 'ed_status': case 'ts_status': case 'tm_status':
+            case 'encoded':
+                $show[$f] = (int)$v;
+                break;
+            case 'airtime':
+                $show[$f] = strtotime($v);
+                break;
+            case 'updated':
+                $show[$f] = strtotime($v)+32400;
+        }
+    }
+	return $show;
 }
 #
 # GET ROUTES
@@ -174,10 +173,12 @@ $app->get('/shows(/:filter)', function ($f) use ($app, $db) {
     switch ($f) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
+        case 'aired': $data = $db->shows()->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
+        case 'aired_compact': $data = $db->shows()->select('series')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
         case NULL: $data = $db->shows(); break;
         default: $app->notFound();
     }
-    foreach ($data as $show) { $shows[] = showa($show); }
+    foreach ($data as $show) { $shows[] = prep_show($show); }
     sendjson(true, $shows);
 });
 $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
@@ -211,7 +212,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
                     'updated' => strtotime($show['updated'])+32400
                 );
                 break;
-            case NULL: $r = showa($show); break;
+            case NULL: $r = prep_show($show); break;
             default: $app->notFound();
         }
         sendjson(true, $r);
