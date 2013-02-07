@@ -274,8 +274,7 @@ $app->post('/show/update', function () use ($app, $db) {
         case 'change_everything':
             if (!array_key_exists('data', $r))
                 err('You did not specify any information for this show.');
-            $changes = sanitize_show($r['data'], $show);
-            $result = $show->update($changes);
+            $result = $show->update(sanitize_show($r['data'], $show));
             sendjson((bool)$result, 'Show updated. (if nothing changed, this will show up as an error.)');
             break;
         case 'position_status':
@@ -283,31 +282,20 @@ $app->post('/show/update', function () use ($app, $db) {
                 err('You did not specify a position.');
             if (!array_key_exists('value', $r))
                 err('You did not specify a status.');
-            $v = $r['value'];
+            #$v = $r['value'];
             if ($v != 1 && $v != 0)
                 err('Status should either be 0 or 1.');
-            switch ($r['position']) {
-                case 'translator':
-                    $result = $show->update(array('tl_status' => $v));
-                    $total = $show['ed_status'] + $show['ts_status'] + $show['tm_status'];
-                    break;
-                case 'editor':
-                    $result = $show->update(array('ed_status' => $v));
-                    $total = $show['tl_status'] + $show['ts_status'] + $show['tm_status'];
-                    break;
-                case 'typesetter':
-                    $result = $show->update(array('ts_status' => $v));
-                    $total = $show['tl_status'] + $show['ed_status']+ $show['tm_status'];
-                    break;
-                case 'timer':
-                    $result = $show->update(array('tm_status' => $v));
-                    $total = $show['tl_status'] + $show['ed_status'] + $show['ts_status'];
-                    break;
-                default:
-                    err("Position '" . $r['position'] . "' does not exist.");
+            $st = array('translator' => 'tl_status', 'editor' => 'ed_status', 'typesetter' => 'ts_status', 'timer' => 'tm_status', 'encoding' => 'encoded');
+            $total = 0;
+            foreach ($st as $f => $v) {
+                if ($r['position'] == $f) {
+                    $result = $show->update(sanitize_show(array("$v" => $r['value']), $show));
+                    $total += $r['value'];
+                }
+                else
+                    $total += $show[$v];
             }
-            $total += $v;
-            if ($total == 4) {
+            if ($total == 5) {
                 $result = next_episode($show);
                 sendjson((bool)$result, 'Show completed and counters reset.');
             } else
@@ -322,7 +310,7 @@ $app->post('/show/update', function () use ($app, $db) {
             $date->modify('-1 week');
             $ep_dec = $show['current_ep'] - 1;
             $status = ($ep_dec < $show['total_eps']?0:1);
-            $result = $show->update(array(
+            $result = $show->update(sanitize_show(array(
                 'tl_status' => 0,
                 'ed_status' => 0,
                 'ts_status' => 0,
@@ -331,19 +319,19 @@ $app->post('/show/update', function () use ($app, $db) {
                 'airtime' => $date,
                 'current_ep' => $ep_dec,
                 'status' => $status
-            ));
+            ), $show));
             sendjson((bool)$result, 'Episode count decremented and staff counters reset.');
             break;
         case 'current_episode':
             if (!array_key_exists('value', $r))
                 err('You did not specify a new value.');
-            $result = $show->update(array('current_ep' => $r['value']));
+            $result = $show->update(sanitize_show(array('current_ep' => $r['value']), $show));
             sendjson((bool)$result, 'Current episode count updated.');
             break;
         case 'total_episodes':
             if (!array_key_exists('value', $r))
                 err('You did not specify a new value.');
-            $result = $show->update(array('total_eps' => $r['value']));
+            $result = $show->update(sanitize_show(array('total_eps' => $r['value']), $show));
             sendjson((bool)$result, 'Total episode count updated.');
             break;
         case 'position':
@@ -354,7 +342,7 @@ $app->post('/show/update', function () use ($app, $db) {
             $positions = array('translator', 'editor', 'typesetter', 'timer');
             if (!in_array($r['position'], $positions))
                 err('Position does not exist.');
-            $result = $show->update(array($r['position'] => $r['value']));
+            $result = $show->update(sanitize_show(array($r['position'] => $r['value']), $show));
             sendjson((bool)$result, 'Position updated (' . $r['position'] . ' is now ' . $r['value'] . ').');
             break;
         default:
