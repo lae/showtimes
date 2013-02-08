@@ -71,7 +71,7 @@ function check_if_sane_sql($row) {
                 err("Value given for '$f' must be shorter than $len characters.");
         }
         elseif ($t == 'date') {
-            if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', $v))
+            if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|0?[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', $v))
                 err("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
         }
     }
@@ -283,7 +283,6 @@ $app->post('/show/update', function () use ($app, $db) {
                 err('You did not specify a position.');
             if (!array_key_exists('value', $r))
                 err('You did not specify a status.');
-            #$v = $r['value'];
             if ($v != 1 && $v != 0)
                 err('Status should either be 0 or 1.');
             $st = array('translator' => 'tl_status', 'editor' => 'ed_status', 'typesetter' => 'ts_status', 'timer' => 'tm_status', 'encoding' => 'encoded');
