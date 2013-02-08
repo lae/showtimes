@@ -41,7 +41,7 @@ function check_if_sane_sql($row) {
         'status' => 'tinyint', 'translator' => 'varchar(63)', 'tl_status' => 'tinyint unsigned',
         'editor' => 'varchar(63)', 'ed_status' => 'tinyint unsigned', 'typesetter' => 'varchar(63)',
         'ts_status' => 'tinyint unsigned', 'timer' => 'varchar(63)', 'tm_status' => 'tinyint unsigned',
-        'encoded' => 'tinyint', 'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)');
+        'encoded' => 'tinyint', 'qc' => 'tinyint unsigned', 'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)');
     foreach ($row as $f => $v) {
         $t = $columns[$f];
         if (preg_match('/^tinyint/', $t)) {
@@ -87,7 +87,7 @@ function sanitize_show($data, $defaults = array()) {
                 break;
             case 'current_ep': case 'total_eps': case 'status': case 'tl_status':
             case 'ed_status': case 'ts_status': case 'tm_status': case 'encoded':
-            case 'airtime':
+            case 'qc': case 'airtime':
                 $show[$f] = $v;
         }
     }
@@ -103,7 +103,7 @@ function sanitize_show($data, $defaults = array()) {
         else
             $show['status'] = 0;
     }
-    foreach (array('tl_status', 'ed_status', 'ts_status', 'tm_status', 'encoded') as $f) {
+    foreach (array('tl_status', 'ed_status', 'ts_status', 'tm_status', 'encoded', 'qc') as $f) {
         if (!in_array($show[$f], array(0,1)))
             $show[$f] = 0;
     }
@@ -122,6 +122,7 @@ function next_episode($show) {
         'ts_status' => 0,
         'tm_status' => 0,
         'encoded' => 0,
+        'qc' => 0,
         'airtime' => $date,
         'current_ep' => $ep_inc,
         'status' => $status
@@ -139,7 +140,7 @@ function prep_show($s) {
                 break;
             case 'id': case 'current_ep': case 'total_eps': case 'status':
             case 'tl_status': case 'ed_status': case 'ts_status': case 'tm_status':
-            case 'encoded':
+            case 'encoded': case 'qc':
                 $show[$f] = (int)$v;
                 break;
             case 'airtime':
@@ -201,10 +202,14 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
                     $who = array('translator', $show['translator']);
                 elseif ($show['ed_status'] == 0)
                     $who = array('editor', $show['editor']);
+                elseif ($show['encoded'] == 0)
+                    $who = array('encoder', 'Servrhe');
                 elseif ($show['tm_status'] == 0)
                     $who = array('timer', $show['timer']);
                 elseif ($show['ts_status'] == 0)
                     $who = array('typesetter', $show['typesetter']);
+                elseif ($show['qc'] == 0)
+                    $who = array('QUALITY CONTROL', 'QUALITY CONTROL');
                 $r = array(
                     'id' => (int)$show['id'],
                     'position' => $who[0],
@@ -285,7 +290,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 err('You did not specify a status.');
             if ($v != 1 && $v != 0)
                 err('Status should either be 0 or 1.');
-            $st = array('translator' => 'tl_status', 'editor' => 'ed_status', 'typesetter' => 'ts_status', 'timer' => 'tm_status', 'encoding' => 'encoded');
+            $st = array('translator' => 'tl_status', 'editor' => 'ed_status', 'typesetter' => 'ts_status', 'timer' => 'tm_status', 'encoder' => 'encoded', 'qc' => 'qc');
             $total = 0;
             foreach ($st as $f => $v) {
                 if ($r['position'] == $f) {
@@ -295,7 +300,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 else
                     $total += $show[$v];
             }
-            if ($total == 5) {
+            if ($total == 6) {
                 $result = next_episode($show);
                 sendjson((bool)$result, 'Show completed and counters reset.');
             } else
@@ -316,6 +321,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 'ts_status' => 0,
                 'tm_status' => 0,
                 'encoded' => 0,
+                'qc' => 0,
                 'airtime' => $date,
                 'current_ep' => $ep_dec,
                 'status' => $status
