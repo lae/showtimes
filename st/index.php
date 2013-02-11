@@ -41,38 +41,39 @@ function check_if_sane_sql($row) {
         'status' => 'tinyint', 'translator' => 'varchar(63)', 'tl_status' => 'tinyint unsigned',
         'editor' => 'varchar(63)', 'ed_status' => 'tinyint unsigned', 'typesetter' => 'varchar(63)',
         'ts_status' => 'tinyint unsigned', 'timer' => 'varchar(63)', 'tm_status' => 'tinyint unsigned',
-        'encoded' => 'tinyint', 'qc' => 'tinyint unsigned', 'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)');
+        'encoded' => 'tinyint', 'qc' => 'tinyint unsigned', 'blog_link' => 'varchar(127)',
+        'channel' => 'varchar(63)', 'abbr' => 'varchar(15)');
     foreach ($row as $f => $v) {
         $t = $columns[$f];
         if (preg_match('/^tinyint/', $t)) {
             if (preg_match('/\bunsigned\b/', $t)) {
                 if (!is_numeric($v) || $v < 0 || $v > 255)
-                    err("Value given for '$f' must be a numeral between 0 and 255.");
+                    err("Value given for '$f' must be a numeral between 0 and 255. ($v)");
             }
             else {
                 if (!is_numeric($v) || $v < -127 || $v > 128)
-                    err("Value given for '$f'must be a numeral between -128 and 127.");
+                    err("Value given for '$f'must be a numeral between -128 and 127. ($v)");
             }
         }
         elseif (preg_match('/^smallint/', $t)) {
             if (preg_match('/\bunsigned\b/', $t)) {
                 if (!is_numeric($v) || $v < 0 || $v > 65535)
-                    err("Value given for '$f' must be a numeral between 0 and 65535.");
+                    err("Value given for '$f' must be a numeral between 0 and 65535. ($v)");
             }
             else {
                 if (!is_numeric($v) || $v < -32768 || $v > 32767)
-                    err("Value given for '$f' must be a numeral between -32768 and 32767.");
+                    err("Value given for '$f' must be a numeral between -32768 and 32767. ($v)");
             }
         }
         elseif (preg_match('/^varchar/', $t)) {
             preg_match('/(?<=varchar\()\d+/', $t, $len);
             $len = $len[0];
             if (strlen($v) > $len)
-                err("Value given for '$f' must be shorter than $len characters.");
+                err("Value given for '$f' must be shorter than $len characters. ($v)");
         }
         elseif ($t == 'date') {
             if (!preg_match('/^[0-9]{4}-(1[0-2]|0?[1-9])-([1-2][0-9]|3(0|1)|0?[1-9]) (([0-1])?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', $v))
-                err("Value given for '$f' must be a valid date with format YYYY-m-d H:MM.");
+                err("Value given for '$f' must be a valid date with format YYYY-m-d H:MM. ($v)");
         }
     }
 
@@ -82,7 +83,7 @@ function sanitize_show($data, $defaults = array()) {
     foreach ($data as $f => $v) {
         switch ($f) {
             case 'series': case 'series_jp': case 'blog_link': case 'translator':
-            case 'editor': case 'typesetter': case 'timer': case 'channel':
+            case 'editor': case 'typesetter': case 'timer': case 'channel': case 'abbr':
                 $show[$f] = htmlspecialchars($v, ENT_QUOTES);
                 break;
             case 'current_ep': case 'total_eps': case 'status': case 'tl_status':
@@ -125,7 +126,8 @@ function next_episode($show) {
         'qc' => 0,
         'airtime' => $date,
         'current_ep' => $ep_inc,
-        'status' => $status
+        'status' => $status,
+        'last_release' => new DateTime()
     ));
     return $result;
 }
@@ -135,7 +137,7 @@ function prep_show($s) {
     foreach ($s as $f => $v) {
         switch ($f) {
             case 'series': case 'series_jp': case 'blog_link': case 'translator':
-            case 'editor': case 'typesetter': case 'timer': case 'channel':
+            case 'editor': case 'typesetter': case 'timer': case 'channel': case 'abbr':
                 $show[$f] = htmlspecialchars_decode($v, ENT_QUOTES);
                 break;
             case 'id': case 'current_ep': case 'total_eps': case 'status':
@@ -143,7 +145,7 @@ function prep_show($s) {
             case 'encoded': case 'qc':
                 $show[$f] = (int)$v;
                 break;
-            case 'airtime':
+            case 'airtime': case 'last_release':
                 $show[$f] = strtotime($v);
                 break;
             case 'updated':
@@ -175,7 +177,8 @@ $app->get('/shows(/:filter)', function ($f) use ($app, $db) {
         case 'done': $data = $db->shows()->where('status', 1); break;
         case 'notdone': $data = $db->shows()->where('status', 0); break;
         case 'aired': $data = $db->shows()->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
-        case 'aired_compact': $data = $db->shows()->select('series')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
+        case 'aired_compact': $data = $db->shows()->select('id, series, current_ep')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
+        case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0)->order('series'); break;
         case NULL: $data = $db->shows(); break;
         default: $app->notFound();
     }
@@ -216,6 +219,9 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
                     'value' => $who[1],
                     'updated' => strtotime($show['updated'])+32400
                 );
+                break;
+            case 'translator': case 'editor': case 'typesetter': case 'timer':
+                $r = array('id' => (int)$show['id'], 'position' => $m, 'name' => $show[$m]);
                 break;
             case NULL: $r = prep_show($show); break;
             default: $app->notFound();
@@ -315,7 +321,7 @@ $app->post('/show/update', function () use ($app, $db) {
             $date->modify('-1 week');
             $ep_dec = $show['current_ep'] - 1;
             $status = ($ep_dec < $show['total_eps']?0:1);
-            $result = $show->update(sanitize_show(array(
+            $result = $show->update(array(
                 'tl_status' => 0,
                 'ed_status' => 0,
                 'ts_status' => 0,
@@ -325,7 +331,7 @@ $app->post('/show/update', function () use ($app, $db) {
                 'airtime' => $date,
                 'current_ep' => $ep_dec,
                 'status' => $status
-            ), $show));
+            ));
             sendjson((bool)$result, 'Episode count decremented and staff counters reset.');
             break;
         case 'current_episode':

@@ -40,6 +40,7 @@ $(document).ready(function(){
     requestObj.method = "change_everything";
     data = new Object();
     data.series = $('#series').val();
+    data.abbr = $('#abbr').val();
     data.series_jp = $('#series_jp').val();
     data.airtime = $('#year').val() + '-' + $('#month').val() + '-' + $('#day').val() + ' ' + $('#hour').val() + ':' + padmin($('#minute').val());
     data.current_ep = parseInt($('#current_ep').val(),10);
@@ -74,7 +75,8 @@ $(document).ready(function(){
       data: formData,
       success:function(data){
         var t = data.status ? 'Success: ' : 'Error: ';
-        responseMsg.text(t + data.message);
+        var m = data.status ?data.results:data.message;
+        responseMsg.text(t + m);
         $('#shows').dataTable().fnReloadAjax('/st/shows');
       }  
     });
@@ -150,6 +152,8 @@ $('#shows').dataTable({
       <input type="text" id="key" name="key" /><br />
     <label for="series">Series</label>
       <input type="text" id="series" name="series" /><br />
+    <label for="abbr">Abbreviation</label>
+      <input type="text" id="abbr" name="abbr" /><br />
     <label for="series_jp">シリーズ</label>
       <input type="text" id="series_jp" name="series_jp" /><br />
     <label>Airtime</label>
