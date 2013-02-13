@@ -145,11 +145,11 @@ function prep_show($s) {
             case 'encoded': case 'qc':
                 $show[$f] = (int)$v;
                 break;
-            case 'airtime': case 'last_release':
+            case 'airtime':
                 $show[$f] = strtotime($v);
                 break;
-            case 'updated':
-                $show[$f] = strtotime($v)+32400;
+            case 'updated': case 'last_release':
+                $show[$f] = strtotime($v)+50400;
         }
     }
 	return $show;
@@ -213,12 +213,8 @@ $app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
                     $who = array('typesetter', $show['typesetter']);
                 elseif ($show['qc'] == 0)
                     $who = array('QUALITY CONTROL', 'QUALITY CONTROL');
-                $r = array(
-                    'id' => (int)$show['id'],
-                    'position' => $who[0],
-                    'value' => $who[1],
-                    'updated' => strtotime($show['updated'])+32400
-                );
+                $r = prep_show(array('id' => (int)$show['id'], 'updated' => $show['updated']));
+                $r = array_merge($r, array('position' => $who[0], 'value' => $who[1]));
                 break;
             case 'translator': case 'editor': case 'typesetter': case 'timer':
                 $r = array('id' => (int)$show['id'], 'position' => $m, 'name' => $show[$m]);
