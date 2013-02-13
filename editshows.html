@@ -58,6 +58,8 @@ $(document).ready(function(){
     if($('#ts_status').is(':checked')) { data.ts_status = 1; } else { data.ts_status = 0; }
     data.timer = $('#timer').val();
     if($('#tm_status').is(':checked')) { data.tm_status = 1; } else { data.tm_status = 0; }
+    data.qc = $('#qc').val();
+    if($('#qc_status').is(':checked')) { data.qc_status = 1; } else { data.qc_status = 0; }
     if($('#encoded').is(':checked')) { data.encoded = 1; } else { data.encoded = 0; }
     requestObj.data = data;
     var form = $(this),
@@ -194,6 +196,9 @@ $('#shows').dataTable({
     <label for="typesetter">Typesetter</label>
       <input type="text" id="typesetter" name="typesetter" />
       <input type="checkbox" id="ts_status" name="ts_status" /><br />
+    <label for="qc">QC</label>
+      <input type="text" id="qc" name="qc" /><br />
+      <input type="checkbox" id="qc_status" name="qc_status" /><br />
     <label for="encoded">Encode Status</label>
       <input type="checkbox" id="encoded" name="encoded" /><br />
   </fieldset>

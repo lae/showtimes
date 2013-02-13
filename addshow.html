@@ -30,6 +30,7 @@ $(document).ready(function(){
     data.editor = $('#editor').val();
     data.typesetter = $('#typesetter').val();
     data.timer = $('#timer').val();
+    data.qc = $('#qcer').val();
     requestObj.data = data;
     var form = $(this),
     formUrl = form.attr('action'),
@@ -111,6 +112,8 @@ label { width: 200px; }
       <input type="text" id="timer" name="timer" /><br />
     <label for="typesetter">Typesetter</label>
       <input type="text" id="typesetter" name="typesetter" /><br />
+    <label for="qc">QC</label>
+      <input type="text" id="qc" name="qc" /><br />
   </fieldset>
   <input type="submit" id="addbutton" value="Add show" />
   <input type="reset" value="Clear fields" />
