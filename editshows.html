@@ -51,6 +51,7 @@ $(document).ready(function(){
     data.channel = $('#channel').val();
     data.blog_link = $('#blog_link').val();
     data.folder = $('#folder').val();
+    data.xdcc_folder = $('#xdcc_folder').val();
     data.translator = $('#translator').val();
     if($('#tl_status').is(':checked')) { data.tl_status = 1; } else { data.tl_status = 0; }
     data.editor = $('#editor').val();
@@ -183,6 +184,8 @@ $('#shows').dataTable({
       <input type="text" id="blog_link" name="blog_link" /><br />
     <label for="folder">Folder</label>
       <input type="text" id="folder" name="folder" /><br />
+    <label for="xdcc_folder">XDCC Folder</label>
+      <input type="text" id="xdcc_folder" name="xdcc_folder" /><br />
   </fieldset>
   <fieldset>
     <legend>Staff</legend>

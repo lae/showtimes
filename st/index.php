@@ -43,7 +43,7 @@ function check_if_sane_sql($row) {
         'ts_status' => 'tinyint unsigned', 'timer' => 'varchar(63)', 'tm_status' => 'tinyint unsigned',
         'encoded' => 'tinyint', 'qc' => 'varchar(63)', 'qc_status' => 'tinyint unsigned',
         'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)', 'abbr' => 'varchar(15)',
-        'folder' => 'varchar(255)');
+        'folder' => 'varchar(255)', 'xdcc_folder' => 'varchar(255)');
     foreach ($row as $f => $v) {
         $t = $columns[$f];
         if (preg_match('/^tinyint/', $t)) {
@@ -85,7 +85,7 @@ function sanitize_show($data, $defaults = array()) {
         switch ($f) {
             case 'series': case 'series_jp': case 'blog_link': case 'translator':
             case 'editor': case 'typesetter': case 'timer': case 'channel':
-            case 'abbr': case 'qc': case 'folder':
+            case 'abbr': case 'qc': case 'folder': case 'xdcc_folder':
                 $show[$f] = htmlspecialchars($v, ENT_QUOTES);
                 break;
             case 'current_ep': case 'total_eps': case 'status': case 'tl_status':
@@ -140,7 +140,7 @@ function prep_show($s) {
         switch ($f) {
             case 'series': case 'series_jp': case 'blog_link': case 'translator':
             case 'editor': case 'typesetter': case 'timer': case 'channel':
-            case 'abbr': case 'qc': case 'folder':
+            case 'abbr': case 'qc': case 'folder': case 'xdcc_folder':
                 $show[$f] = htmlspecialchars_decode($v, ENT_QUOTES);
                 break;
             case 'id': case 'current_ep': case 'total_eps': case 'status':
