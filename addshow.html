@@ -26,6 +26,7 @@ $(document).ready(function(){
     if($('#status').is(':checked')) { data.status = -1; }
     data.channel = $('#channel').val();
     data.blog_link = $('#blog_link').val();
+    data.folder = $('#folder').val();
     data.translator = $('#translator').val();
     data.editor = $('#editor').val();
     data.typesetter = $('#typesetter').val();
@@ -101,6 +102,8 @@ label { width: 200px; }
       <input type="text" id="channel" name="channel" value="Crunchyroll" /><br />
     <label for="blog_link">Link to Blog</label>
       <input type="text" id="blog_link" name="blog_link" /><br />
+    <label for="folder">Folder</label>
+      <input type="text" id="folder" name="folder" /><br />
   </fieldset>
   <fieldset>
     <legend>Staff</legend>
