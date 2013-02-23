@@ -43,7 +43,7 @@ function check_if_sane_sql($row) {
         'ts_status' => 'tinyint unsigned', 'timer' => 'varchar(63)', 'tm_status' => 'tinyint unsigned',
         'encoded' => 'tinyint', 'qc' => 'varchar(63)', 'qc_status' => 'tinyint unsigned',
         'blog_link' => 'varchar(127)', 'channel' => 'varchar(63)', 'abbr' => 'varchar(15)',
-        'folder' => 'varchar(255)', 'xdcc_folder' => 'varchar(255)');
+        'folder' => 'varchar(255)', 'xdcc_folder' => 'varchar(255)', 'last_release' => 'date');
     foreach ($row as $f => $v) {
         $t = $columns[$f];
         if (preg_match('/^tinyint/', $t)) {
@@ -90,7 +90,7 @@ function sanitize_show($data, $defaults = array()) {
                 break;
             case 'current_ep': case 'total_eps': case 'status': case 'tl_status':
             case 'ed_status': case 'ts_status': case 'tm_status': case 'encoded':
-            case 'qc_status': case 'airtime':
+            case 'qc_status': case 'airtime': case 'last_release':
                 $show[$f] = $v;
         }
     }
@@ -178,7 +178,7 @@ $app->get('/shows(/:filter)', function ($f) use ($app, $db) {
     $shows = array();
     switch ($f) {
         case 'done': $data = $db->shows()->where('status', 1); break;
-        case 'notdone': $data = $db->shows()->where('status', 0); break;
+        case 'notdone': $data = $db->shows()->where('status < ?', 1); break;
         case 'aired': $data = $db->shows()->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
         case 'aired_compact': $data = $db->shows()->select('id, series, current_ep')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
         case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0)->order('series'); break;
@@ -272,11 +272,11 @@ $app->post('/show/update', function () use ($app, $db) {
     if (!array_key_exists('id', $r) && !array_key_exists('series', $r))
         err('You need to specify either the series name or ID to update it.');
     else {
-        if ($where_value = $r['id'])
+        if (isset($r['id']))
             $where = 'id';
-        elseif ($where_value = $r['series'])
+        elseif (isset($r['series']))
             $where = 'series';
-        $data = $db->shows()->where($where, $where_value);
+        $data = $db->shows()->where($where, $r[$where]);
         if (!$show = $data->fetch())
             err('Show does not exist.');
         $columns = array_keys(iterator_to_array($show));
@@ -293,14 +293,15 @@ $app->post('/show/update', function () use ($app, $db) {
                 err('You did not specify a position.');
             if (!array_key_exists('value', $r))
                 err('You did not specify a status.');
-            if ($v != 1 && $v != 0)
+            $val = $r['value'];
+            if ($val != 1 && $val != 0)
                 err('Status should either be 0 or 1.');
             $st = array('translator' => 'tl_status', 'editor' => 'ed_status', 'typesetter' => 'ts_status', 'timer' => 'tm_status', 'encoder' => 'encoded', 'qc' => 'qc_status');
             $total = 0;
             foreach ($st as $f => $v) {
                 if ($r['position'] == $f) {
-                    $result = $show->update(sanitize_show(array("$v" => $r['value']), $show));
-                    $total += $r['value'];
+                    $result = $show->update(sanitize_show(array("$v" => $val), $show));
+                    $total += $val;
                 }
                 else
                     $total += $show[$v];
