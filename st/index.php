@@ -174,7 +174,7 @@ $app->get('/refresh', function() use ($app, $db) {
     }
     sendjson(true, "Database updated.");
 });
-$app->get('/shows(/:filter)', function ($f) use ($app, $db) {
+$app->get('/shows(/:filter)', function ($f=NULL) use ($app, $db) {
     $shows = array();
     switch ($f) {
         case 'done': $data = $db->shows()->where('status', 1); break;
