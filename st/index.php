@@ -1,15 +1,16 @@
 <?php
 require 'Slim/Slim.php';
 require 'NotORM.php';
+require 'config.php';
 
 date_default_timezone_set('Asia/Tokyo');
 
-$pdo = new PDO('mysql:host=localhost;dbname=commie', 'commie', 'Hammer und Sichel');
+$pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASSWORD);
 $db = new NotORM($pdo);
 
 \Slim\Slim::registerAutoloader();
 $app = new \Slim\Slim(array('debug' => false));
-$app->key = '3e5e0eb1209cf522b224989371da43015aa81258';
+$app->key = API_KEY;
 $app->setName('commie_shows');
 $app->add(new \Slim\Middleware\ContentTypes);
 # Make 404 errors return a JSON encoded string
@@ -217,7 +218,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
                     $who = array('typesetter', $show['typesetter']);
                 elseif ($show['qc_status'] == 0)
                     $who = array('quality control', $show['qc']);
-                $r = prep_show(array('id' => (int)$show['id'], 'updated' => $show['updated']));
+                $r = array('id' => (int)$show['id'], 'updated' => $show['updated']);
                 $r = array_merge($r, array('position' => $who[0], 'value' => $who[1]));
                 break;
             case 'translator': case 'editor': case 'typesetter': case 'timer': case 'qc':
