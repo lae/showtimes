@@ -206,18 +206,16 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
                     $who = array('completed', 'completed');
                 elseif (strtotime($show['airtime']) > strtotime(date('Y-m-d H:i:s')))
                     $who = array('broadcaster', $show['channel']);
-                elseif ($show['tl_status'] == 0)
-                    $who = array('translator', $show['translator']);
-                elseif ($show['ed_status'] == 0)
-                    $who = array('editor', $show['editor']);
-                elseif ($show['encoded'] == 0)
-                    $who = array('encoder', 'Servrhe');
-                elseif ($show['tm_status'] == 0)
-                    $who = array('timer', $show['timer']);
-                elseif ($show['ts_status'] == 0)
-                    $who = array('typesetter', $show['typesetter']);
-                elseif ($show['qc_status'] == 0)
-                    $who = array('quality control', $show['qc']);
+                else {
+                    switch(0) {
+                        case $show['tl_status']: $who = array('translator', $show['translator']); break;
+                        case $show['ed_status']: $who = array('editor', $show['editor']); break;
+                        case $show['encoded']: $who = array('encoder', 'Servrhe'); break;
+                        case $show['tm_status']: $who = array('timer', $show['timer']); break;
+                        case $show['ts_status']: $who = array('typesetter', $show['typesetter']); break;
+                        case $show['qc_status']: $who = array('quality control', $show['qc']); break;
+                    }
+                }
                 $r = array('id' => (int)$show['id'], 'updated' => $show['updated']);
                 $r = array_merge($r, array('position' => $who[0], 'value' => $who[1]));
                 break;
