@@ -198,6 +198,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
         $query = $db->shows()->where('series', htmlspecialchars($f, ENT_QUOTES));
     }
     if ($show = $query->fetch()) {
+        $show = prep_show($show);
         switch ($m) {
             case 'substatus':
                 if ($show['current_ep'] >= $show['total_eps'] && $show['total_eps'] != 0)
@@ -222,7 +223,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
             case 'translator': case 'editor': case 'typesetter': case 'timer': case 'qc':
                 $r = array('id' => (int)$show['id'], 'position' => $m, 'name' => $show[$m]);
                 break;
-            case NULL: $r = prep_show($show); break;
+            case NULL: $r = $show; break;
             default: $app->notFound();
         }
         sendjson(true, $r);
