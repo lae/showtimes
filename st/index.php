@@ -188,7 +188,7 @@ $app->get('/shows(/:filter)', function ($f=NULL) use ($app, $db) {
     foreach ($data as $show) { $shows[] = prep_show($show); }
     sendjson(true, $shows);
 });
-$app->get('/show/:filter(/:method)', function ($f, $m) use ($app, $db) {
+$app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
     if (preg_match('/^[0-9]+$/', $f)) {
         $_err = "Show ID $f does not exist.";
         $query = $db->shows()->where('id', (int)$f);
