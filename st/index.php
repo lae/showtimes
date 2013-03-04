@@ -101,7 +101,8 @@ function sanitize_show($data, $defaults = array()) {
     }
     if (strlen($show['series']) < 1 || !array_key_exists('series', $show))
         err("You need to specify a name for the series.");
-    if (!in_array($show['status'], array(-1,0,1)) || !array_key_exists('status', $show)) {
+    if (!in_array($show['status'], array(-2,-1,0,1)) || !array_key_exists('status', $show)) {
+        //status definitions: -2 - dropped; -1 - on hold; 0 - airing; 1 - completed
         if ($show['current_ep'] == $show['total_eps'] && ($show['total_eps'] != 0 && array_key_exists('total_eps', $show)))
             $show['status'] = 1;
         else
@@ -204,6 +205,8 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
             case 'substatus':
                 if ($show['current_ep'] >= $show['total_eps'] && $show['total_eps'] != 0)
                     $who = array('completed', 'completed');
+                elseif ($show['status'] == -2)
+                    $who = array('DROPPED', 'DROPPED');
                 elseif (strtotime($show['airtime']) > strtotime(date('Y-m-d H:i:s')))
                     $who = array('broadcaster', $show['channel']);
                 else {
