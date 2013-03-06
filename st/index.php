@@ -183,7 +183,7 @@ $app->get('/shows(/:filter)', function ($f=NULL) use ($app, $db) {
         case 'notdone': $data = $db->shows()->where('status < ?', 1); break;
         case 'aired': $data = $db->shows()->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
         case 'aired_compact': $data = $db->shows()->select('id, series, current_ep')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
-        case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0)->order('series'); break;
+        case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0')->where('current_ep > 0')->order('series'); break;
         case NULL: $data = $db->shows(); break;
         default: $app->notFound();
     }
