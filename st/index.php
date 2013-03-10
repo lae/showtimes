@@ -183,13 +183,16 @@ $app->get('/shows(/:filter)', function ($f=NULL) use ($app, $db) {
         case 'notdone': $data = $db->shows()->where('status < ?', 1); break;
         case 'aired': $data = $db->shows()->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
         case 'aired_compact': $data = $db->shows()->select('id, series, current_ep')->where('airtime < ?', new DateTime())->where('status', 0)->where('encoded', 0)->order('airtime'); break;
-        case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0')->where('current_ep > 0')->order('series'); break;
+        case 'current_episodes': $data = $db->shows()->select('id, series, abbr, current_ep, updated, last_release')->where('status', 0)->where('current_ep > 0')->order('series'); break;
         case NULL: $data = $db->shows(); break;
         default: $app->notFound();
     }
     foreach ($data as $show) { $shows[] = prep_show($show); }
     sendjson(true, $shows);
 });
+/*07:24:18 <&RHExcelion> lae: make .next display "Episode ## of <show title here> (name in jap) will air in XX:XX:XX
+07:25:05 <&RHExcelion> no argument is just the one with the smallest eta
+07:25:24 <&RHExcelion> with argument is the next episode of the provided argument*/
 $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
     if (preg_match('/^[0-9]+$/', $f)) {
         $_err = "Show ID $f does not exist.";
@@ -232,6 +235,33 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
     }
     else
         err($_err);
+});
+$app->get('/airingnext(/:filter)', function ($f=NULL) use ($app, $db) {
+    $now = new DateTime();
+    if (is_null($f))
+        $show = prep_show($db->shows()->where('airtime > ?', $now)->limit(1)->fetch());
+    else {
+        if (preg_match('/^[0-9]+$/', $f)) {
+            $_err = "Show ID $f does not exist.";
+            $query = $db->shows()->where('id', (int)$f);
+        }
+        else {
+            $_err = "Show \"$f\" does not exist.";
+            $query = $db->shows()->where('series', htmlspecialchars($f, ENT_QUOTES));
+        }
+        if ($show = $query->fetch())
+            $show = prep_show($show);
+        else
+            err($_err);
+    }
+    $air = DateTime::createFromFormat('U',$show['airtime']);
+    $eta = $now->diff($air);
+    if ($eta->d > 0)
+        $p_eta = $eta->format("%r{$eta->days} days");
+    else
+        $p_eta = $eta->format('%r%H:%M:%S');
+    $r = array('id' => $show['id'], 'series' => $show['series'], 'series_jp' => $show['series_jp'], 'next_ep' => $show['current_ep'] + 1, 'eta' => $p_eta);
+    sendjson(true, $r);
 });
 #
 # POST ROUTES
