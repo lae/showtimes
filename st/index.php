@@ -236,10 +236,19 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
     else
         err($_err);
 });
-$app->get('/airingnext(/:filter)', function ($f=NULL) use ($app, $db) {
+$app->get('/airing/:when(/:filter)', function ($w, $f=NULL) use ($app, $db) {
+    if ($w != 'next' && $w != 'previous')
+        $app->notFound();
+    else
+        $w = $w == 'next' ?true:false;
     $now = new DateTime();
-    if (is_null($f))
-        $show = prep_show($db->shows()->where('airtime > ?', $now)->limit(1)->fetch());
+    if (is_null($f)) {
+        if ($w)
+            $show = $db->shows()->where('airtime > ?', $now)->order('airtime asc');
+        else
+            $show = $db->shows()->where('airtime < ?', $now)->order('airtime desc');
+        $show = prep_show($show->fetch());
+    }
     else {
         if (preg_match('/^[0-9]+$/', $f)) {
             $_err = "Show ID $f does not exist.";
@@ -255,12 +264,38 @@ $app->get('/airingnext(/:filter)', function ($f=NULL) use ($app, $db) {
             err($_err);
     }
     $air = DateTime::createFromFormat('U',$show['airtime']);
-    $eta = $now->diff($air);
-    if ($eta->d > 0)
-        $p_eta = $eta->format("%r{$eta->days} days");
-    else
-        $p_eta = $eta->format('%r%H:%M:%S');
-    $r = array('id' => $show['id'], 'series' => $show['series'], 'series_jp' => $show['series_jp'], 'next_ep' => $show['current_ep'] + 1, 'eta' => $p_eta);
+    $diff = $now->diff($air);
+    $episode = $show['current_ep'] + 1;
+    if ($w) {
+        while ($diff->invert == 1) {
+            $episode++;
+            $air->modify('+1 week');
+            $diff = $now->diff($air);
+        };
+        if ($diff->d > 0)
+            $when = $diff->format("{$diff->days} days");
+        elseif ($episode > $show['total_eps'])
+            $when = 'finished_airing';
+        else
+            $when = $diff->format('%H:%M:%S');
+    }
+    else {
+        while ($diff->invert == 0) {
+            $episode--;
+            $air->modify('-1 week');
+            $diff = $now->diff($air);
+        };
+        while ($diff->days > 7 && $episode < $show['total_eps']) {
+            $episode++;
+            $air->modify('+1 week');
+            $diff = $now->diff($air);
+        }
+        if ($diff->d > 0)
+            $when = $diff->format("{$diff->days} days");
+        else
+            $when = $diff->format('%H:%M:%S');
+    }
+    $r = array('id' => $show['id'], 'series' => $show['series'], 'series_jp' => $show['series_jp'], 'episode' => $episode, 'when' => $when);
     sendjson(true, $r);
 });
 #
