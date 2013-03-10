@@ -265,22 +265,20 @@ $app->get('/airing/:when(/:filter)', function ($w, $f=NULL) use ($app, $db) {
     }
     $air = DateTime::createFromFormat('U',$show['airtime']);
     $diff = $now->diff($air);
-    $episode = $show['current_ep'] + 1;
+    $episode = $show['current_ep'];
     if ($w) {
-        while ($diff->invert == 1) {
+        while ($diff->invert == 1 && $episode < $show['total_eps']) {
             $episode++;
             $air->modify('+1 week');
             $diff = $now->diff($air);
         };
-        if ($diff->d > 0)
-            $when = $diff->format("{$diff->days} days");
-        elseif ($episode > $show['total_eps'])
-            $when = 'finished_airing';
+        if ($episode == $show['total_eps'])
+            $episode = 'finished';
         else
-            $when = $diff->format('%H:%M:%S');
+            $episode++;
     }
     else {
-        while ($diff->invert == 0) {
+        while ($diff->invert == 0 && $episode > 0) {
             $episode--;
             $air->modify('-1 week');
             $diff = $now->diff($air);
@@ -290,11 +288,15 @@ $app->get('/airing/:when(/:filter)', function ($w, $f=NULL) use ($app, $db) {
             $air->modify('+1 week');
             $diff = $now->diff($air);
         }
-        if ($diff->d > 0)
-            $when = $diff->format("{$diff->days} days");
-        else
-            $when = $diff->format('%H:%M:%S');
+        if ($episode == 0)
+            $episode = "unaired";
     }
+    if ($diff->d == 1)
+        $when = $diff->format("{$diff->days} day");
+    elseif ($diff->d > 0)
+        $when = $diff->format("{$diff->days} days");
+    else
+        $when = $diff->format('%H:%M:%S');
     $r = array('id' => $show['id'], 'series' => $show['series'], 'series_jp' => $show['series_jp'], 'episode' => $episode, 'when' => $when);
     sendjson(true, $r);
 });
