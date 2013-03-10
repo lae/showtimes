@@ -288,15 +288,17 @@ $app->get('/airing/:when(/:filter)', function ($w, $f=NULL) use ($app, $db) {
             $air->modify('+1 week');
             $diff = $now->diff($air);
         }
-        if ($episode == 0)
+        if ($episode == 0 && $diff->invert == 0)
             $episode = "unaired";
+        else
+            $episode++;
     }
-    if ($diff->d == 1)
-        $when = $diff->format("{$diff->days} day");
-    elseif ($diff->d > 0)
+    if ($diff->days == 1)
+        $when = $diff->format("1 day");
+    elseif ($diff->days > 0)
         $when = $diff->format("{$diff->days} days");
     else
-        $when = $diff->format('%H:%M:%S');
+        $when = $diff->format('%H:%I:%S');
     $r = array('id' => $show['id'], 'series' => $show['series'], 'series_jp' => $show['series_jp'], 'episode' => $episode, 'when' => $when);
     sendjson(true, $r);
 });
