@@ -210,7 +210,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
                     $who = array('completed', 'completed');
                 elseif ($show['status'] == -2)
                     $who = array('DROPPED', 'DROPPED');
-                elseif (strtotime($show['airtime']) > strtotime(date('Y-m-d H:i:s')))
+                elseif ($show['airtime'] > time())
                     $who = array('broadcaster', $show['channel']);
                 else {
                     switch(0) {
