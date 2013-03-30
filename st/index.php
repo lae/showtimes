@@ -206,20 +206,21 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
         $show = prep_show($show);
         switch ($m) {
             case 'substatus':
+                $who = array();
                 if ($show['current_ep'] >= $show['total_eps'] && $show['total_eps'] != 0)
-                    $who = array('completed', 'completed');
+                    $who = ['completed', 'completed'];
                 elseif ($show['status'] == -2)
-                    $who = array('DROPPED', 'DROPPED');
+                    $who = ['DROPPED', 'DROPPED'];
                 elseif ($show['airtime'] > time())
-                    $who = array('broadcaster', $show['channel']);
+                    $who = ['broadcaster', $show['channel']];
                 else {
                     switch(0) {
-                        case $show['tl_status']: $who = array('translator', $show['translator']); break;
-                        case $show['ed_status']: $who = array('editor', $show['editor']); break;
-                        case $show['encoded']: $who = array('encoder', 'Servrhe'); break;
-                        case $show['tm_status']: $who = array('timer', $show['timer']); break;
-                        case $show['ts_status']: $who = array('typesetter', $show['typesetter']); break;
-                        case $show['qc_status']: $who = array('quality control', $show['qc']); break;
+                        case $show['tl_status']: $who = ['translator', $show['translator']]; break;
+                        case $show['encoded']: $who = ['encoder', '']; break;
+                        case $show['ed_status']: $who = ['editor', $show['editor']]; break;
+                        case $show['tm_status']: $who = ['timer', $show['timer']]; break;
+                        case $show['ts_status']: $who = ['typesetter', $show['typesetter']]; break;
+                        case $show['qc_status']: $who = ['quality control', $show['qc']]; break;
                     }
                 }
                 $r = array('id' => (int)$show['id'], 'updated' => $show['updated']);
