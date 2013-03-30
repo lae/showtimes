@@ -154,7 +154,7 @@ function prep_show($s) {
                 $show[$f] = strtotime($v);
                 break;
             case 'updated': case 'last_release':
-                $show[$f] = strtotime($v)+50400;
+                $show[$f] = strtotime($v)+32400+14400;
         }
     }
 	return $show;
