@@ -173,6 +173,8 @@ $app->get('/refresh', function() use ($app, $db) {
             if ($show['translator'] == 'Crunchyroll' && $show['tl_status'] != 1)
                 $show->update(array('tl_status' => 1));
         } */
+       if ($show['id'] == 89 && 'tl_status' != 1)
+           $show->update(array('tl_status' => 1, 'ts_status' => 1, 'ed_status' => 1, 'tm_status' => 1));
     }
     sendjson(true, "Database updated.");
 });
