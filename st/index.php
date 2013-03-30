@@ -275,7 +275,7 @@ $app->get('/airing/:when(/:filter)', function ($w, $f=NULL) use ($app, $db) {
             $air->modify('+1 week');
             $diff = $now->diff($air);
         };
-        if ($episode == $show['total_eps'])
+        if ($episode == $show['total_eps'] && $episode > 0)
             $episode = 'finished';
         else
             $episode++;
