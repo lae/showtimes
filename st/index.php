@@ -225,7 +225,7 @@ $app->get('/show/:filter(/:method)', function ($f, $m=NULL) use ($app, $db) {
                         case $show['qc_status']: $who = ['quality control', $show['qc']]; break;
                     }
                 }
-                $r = array('id' => (int)$show['id'], 'updated' => $show['updated']);
+                $r = array('id' => (int)$show['id'], 'updated' => $show['updated'], 'episode' => $show['current_ep'] + 1);
                 $r = array_merge($r, array('position' => $who[0], 'value' => $who[1]));
                 break;
             case 'translator': case 'editor': case 'typesetter': case 'timer': case 'qc':
